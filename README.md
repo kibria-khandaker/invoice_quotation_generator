@@ -1,1 +1,1 @@
-note for project
+project and folders details
