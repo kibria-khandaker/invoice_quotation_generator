@@ -1,7 +1,26 @@
-import { View, Text } from 'react-native';
+import { View, Text, Button } from 'react-native';
+import { generatePDF } from '../services/pdfService';
 
 export default function PreviewScreen({ route }) {
   const { clientName, services, total } = route.params;
+
+  // 🔥 IMPORTANT: Correct data mapping
+  const quotationData = {
+    clientName,
+    items: services,
+    total,
+  };
+
+  const handleGeneratePDF = async () => {
+    try {
+      const uri = await generatePDF(quotationData);
+      console.log('PDF saved at:', uri);
+      alert('PDF Generated!');
+    } catch (error) {
+      console.log(error);
+      alert('Error generating PDF');
+    }
+  };
 
   return (
     <View style={{ padding: 20 }}>
@@ -13,7 +32,11 @@ export default function PreviewScreen({ route }) {
         </Text>
       ))}
 
-      <Text>Total: {total}</Text>
+      <Text style={{ marginTop: 10, fontWeight: 'bold' }}>
+        Total: {total}
+      </Text>
+
+      <Button title="Generate PDF" onPress={handleGeneratePDF} />
     </View>
   );
 }

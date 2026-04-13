@@ -77,7 +77,9 @@ export default function CreateQuotationScreen({ navigation }) {
 
       <Button title="Add Service" onPress={addService} />
 
-      <Text style={{ marginTop: 20 }}>Total: {total}</Text>
+      <Text style={{ marginTop: 20, fontWeight: 'bold' }}>
+        Total: {total}
+      </Text>
 
       <Button
         title="Go to Preview"
