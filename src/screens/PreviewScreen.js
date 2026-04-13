@@ -1,5 +1,6 @@
 import { View, Text, Button } from 'react-native';
 import { generatePDF } from '../services/pdfService';
+import * as Sharing from 'expo-sharing';
 
 export default function PreviewScreen({ route }) {
   const { clientName, services, total } = route.params;
@@ -11,16 +12,23 @@ export default function PreviewScreen({ route }) {
     total,
   };
 
-  const handleGeneratePDF = async () => {
-    try {
-      const uri = await generatePDF(quotationData);
-      console.log('PDF saved at:', uri);
-      alert('PDF Generated!');
-    } catch (error) {
-      console.log(error);
-      alert('Error generating PDF');
+   
+const handleGeneratePDF = async () => {
+  try {
+    const uri = await generatePDF(quotationData);
+
+    // 🔥 Share PDF
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri);
+    } else {
+      alert('Sharing not available on this device');
     }
-  };
+
+  } catch (error) {
+    console.log(error);
+    alert('Error generating PDF');
+  }
+};
 
   return (
     <View style={{ padding: 20 }}>
