@@ -1,3 +1,5 @@
+// src/screens/PreviewScreen.js:
+
 import { View, Text, Button } from 'react-native';
 import { generatePDF } from '../services/pdfService';
 import * as Sharing from 'expo-sharing';

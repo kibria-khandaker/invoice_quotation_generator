@@ -1,3 +1,5 @@
+// src/templates/quotationTemplate.js: 
+
 export const generateQuotationHTML = (data) => {
   const { clientName, items, total } = data;
 
