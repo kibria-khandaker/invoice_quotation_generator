@@ -2,11 +2,13 @@
 
 
 
-import { View, Text, TextInput, Button, ScrollView  } from 'react-native';
+import { View, Text, TextInput, Button, ScrollView, Image, TouchableOpacity  } from 'react-native';
 import { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generateQuotationNumber } from '../utils/generateQuotationNumber';
 import styles from './CreateQuotationScreenStyle';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function CreateQuotationScreen({ navigation }) {
 
@@ -32,7 +34,12 @@ export default function CreateQuotationScreen({ navigation }) {
     paymentTerms: '',
 paymentMethod: '',
 mobilePaymentInfo: '', // ✅ NEW FIELD
-signature: '', // ✅ will store image URI
+signature: '', // keep for compatibility
+// ✅ NEW
+logo: null,
+logoBase64: null,
+signatureImage: null,
+signatureBase64: null, // ✅ will store image URI
 notes: ''
   });
 
@@ -57,6 +64,58 @@ notes: ''
     }));
   };
 
+const pickAndProcessImage = async (field) => {
+  try {
+    // permission
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert('Permission required!');
+      return;
+    }
+
+    // pick image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
+      quality: 0.7,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+
+    // 🔥 RESIZE + COMPRESS
+    const manipulated = await ImageManipulator.manipulateAsync(
+      asset.uri,
+      [{ resize: { width: 300 } }], // auto scale height
+      {
+        compress: 0.5,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      }
+    );
+
+    // 🔥 SAVE IN STATE
+    if (field === 'logo') {
+      setInvoice(prev => ({
+        ...prev,
+        logo: manipulated.uri,
+        logoBase64: manipulated.base64,
+      }));
+    }
+
+    if (field === 'signature') {
+      setInvoice(prev => ({
+        ...prev,
+        signatureImage: manipulated.uri,
+        signatureBase64: manipulated.base64,
+      }));
+    }
+
+  } catch (err) {
+    console.log(err);
+  }
+};  
   const updateService = (id, field, value) => {
     const updated = invoice.services.map(item =>
       item.id === id ? { ...item, [field]: value } : item
@@ -150,9 +209,20 @@ notes: ''
     </View>
 
     {/* RIGHT SIDE - LOGO */}
-    <View style={styles.logoContainer}>
-      <Text style={{ fontSize: 12, color: '#888' }}>Logo</Text>
-    </View>
+<TouchableOpacity
+  style={styles.logoContainer}
+  onPress={() => pickAndProcessImage('logo')}
+>
+  {invoice.logo ? (
+    <Image
+      source={{ uri: invoice.logo }}
+      style={{ width: '100%', height: '100%' }}
+      resizeMode="contain"
+    />
+  ) : (
+    <Text style={{ fontSize: 12, color: '#888' }}>Upload Logo</Text>
+  )}
+</TouchableOpacity>
 
   </View>
 {/* 2222222222  */}
@@ -356,12 +426,20 @@ Rocket: 01XXXXXXXXX`}
   <Text style={{ marginBottom: 20 }}>________________________</Text>
   <Text>Authorized Signature</Text>
 
-  <TextInput
-    value={invoice.signature}
-    onChangeText={(t) => updateField('signature', t)}
-    style={styles.input}
-    placeholder="Signature Name"
-  />
+<TouchableOpacity onPress={() => pickAndProcessImage('signature')}>
+  {invoice.signatureImage ? (
+    <Image
+      source={{ uri: invoice.signatureImage }}
+      style={{ width: 120, height: 60 }}
+      resizeMode="contain"
+    />
+  ) : (
+    <View style={styles.signatureBox}>
+      <Text style={{ fontSize: 10 }}>Upload Signature</Text>
+    </View>
+  )}
+</TouchableOpacity>
+
 </View>
 {/* 10, 10, 10, 10  */}
 

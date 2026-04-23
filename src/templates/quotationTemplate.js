@@ -30,16 +30,23 @@ export const generateQuotationHTML = (data) => {
   </div>
 
   <!-- RIGHT (LOGO PLACEHOLDER) -->
-  <div style="
-    width: 80px;
-    height: 80px;
-    border: 1px solid #ccc;
-    text-align: center;
-    line-height: 80px;
-    font-size: 10px;
-  ">
-    Logo
-  </div>
+  ${data.logoBase64 ? `
+    <img 
+      src="data:image/jpeg;base64,${data.logoBase64}" 
+      style="width:80px;height:80px;object-fit:contain;" 
+    />
+  ` : `
+    <div style="
+      width: 80px;
+      height: 80px;
+      border: 1px solid #ccc;
+      text-align: center;
+      line-height: 80px;
+      font-size: 10px;
+    ">
+      Logo
+    </div>
+  `}
 
 </div>
 
@@ -125,8 +132,18 @@ export const generateQuotationHTML = (data) => {
 
 <!-- SIGNATURE -->
 <div style="text-align: right; margin-top: 40px;">
+
   <p>________________________</p>
-  <p>${data.signature}</p>
+
+  ${data.signatureBase64 ? `
+    <img 
+      src="data:image/jpeg;base64,${data.signatureBase64}" 
+      style="width:120px;height:60px;object-fit:contain;" 
+    />
+  ` : `
+    <p>${data.signature}</p>
+  `}
+
 </div>
 
 <!-- FOOTER -->

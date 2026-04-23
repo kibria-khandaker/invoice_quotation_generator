@@ -2,7 +2,7 @@
 
 
 
-import { View, Text, Button, ScrollView } from 'react-native';
+import { View, Text, Button, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generatePDF } from '../services/pdfService';
 import * as Sharing from 'expo-sharing';
@@ -39,6 +39,16 @@ export default function PreviewScreen({ route }) {
   </View>
 
   {/* RIGHT - LOGO */}
+{data.logo ? (
+  <Image
+    source={{ uri: data.logo }}
+    style={{
+      width: 80,
+      height: 80
+    }}
+    resizeMode="contain"
+  />
+) : (
   <View style={{
     width: 80,
     height: 80,
@@ -49,6 +59,7 @@ export default function PreviewScreen({ route }) {
   }}>
     <Text style={{ fontSize: 10 }}>Logo</Text>
   </View>
+)}
 
 </View>
 {/* 22222222222 */}
@@ -156,7 +167,16 @@ export default function PreviewScreen({ route }) {
 {/* SIGNATURE */}
 <View style={{ alignItems: 'flex-end', marginTop: 30 }}>
   <Text>________________________</Text>
-  <Text>{data.signature}</Text>
+  
+  {data.signatureImage ? (
+      <Image
+        source={{ uri: data.signatureImage }}
+        style={{ width: 120, height: 60 }}
+        resizeMode="contain"
+      />
+    ) : (
+      <Text>{data.signature}</Text>
+  )}
 </View>
 {/* 10 10 10  */}
 
