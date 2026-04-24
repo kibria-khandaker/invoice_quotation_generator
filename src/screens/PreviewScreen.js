@@ -5,6 +5,7 @@
 import { View, Text, Button, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generatePDF } from '../services/pdfService';
+import { saveQuotation, updateQuotation  } from '../services/storageService';
 import * as Sharing from 'expo-sharing';
 
 export default function PreviewScreen({ route }) {
@@ -21,6 +22,34 @@ export default function PreviewScreen({ route }) {
       await Sharing.shareAsync(uri);
     }
   };
+
+
+const handleSaveQuotation = async () => {
+
+  let success = false;
+
+  // 👉 যদি ID already থাকে → UPDATE
+  if (data.id) {
+    success = await updateQuotation(data);
+  } 
+  // 👉 না থাকলে → NEW SAVE
+  else {
+    const newData = {
+      ...data,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+    };
+
+    success = await saveQuotation(newData);
+  }
+
+  if (success) {
+    alert('Quotation saved successfully!');
+  } else {
+    alert('Failed to save quotation');
+  }
+};
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -198,6 +227,9 @@ export default function PreviewScreen({ route }) {
 
 </View>
 {/* 12 12 12 */}
+        {/* <Button title="Save Quotation" onPress={handleSaveQuotation} /> */}
+        <Button title={data.id ? "Update Quotation" : "Save Quotation"} onPress={handleSaveQuotation} />
+        <View style={{ height: 10 }} />
         <Button title="Generate PDF" onPress={handleGeneratePDF} />
 
       </ScrollView>

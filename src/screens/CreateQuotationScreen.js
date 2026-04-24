@@ -10,7 +10,7 @@ import styles from './CreateQuotationScreenStyle';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 
-export default function CreateQuotationScreen({ navigation }) {
+export default function CreateQuotationScreen({ navigation, route}) {
 
   const [invoice, setInvoice] = useState({
     companyName: '',
@@ -56,6 +56,13 @@ notes: ''
 
     init();
   }, []);
+
+useEffect(() => {
+  if (route?.params?.editData) {
+    setInvoice(route.params.editData);
+  }
+}, [route?.params]);
+
 
   const updateField = (key, value) => {
     setInvoice(prev => ({
@@ -471,7 +478,8 @@ Rocket: 01XXXXXXXXX`}
 </View>
 {/* 12 12 12 12 */}
         <Button title="Go to Preview" onPress={handlePreview} />
-
+<View style={{ height: 10 }} />
+<Button title="View History" onPress={() => navigation.navigate('History')} />
       </ScrollView>
     </SafeAreaView>
   );

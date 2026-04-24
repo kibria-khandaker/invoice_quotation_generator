@@ -10,6 +10,11 @@ export default function HomeScreen({ navigation }) {
         title="Create Quotation"
         onPress={() => navigation.navigate('Create')}
       />
+      <View style={{ height: 10 }} />
+      <Button
+        title="View Quotation History"
+        onPress={() => navigation.navigate('History')}
+      />
     </View>
   );
 }
