@@ -17,3 +17,7 @@ logic লাগবে:
 - Today date
 - Local storage (AsyncStorage) → counter store করতে হবে
 - Daily reset logic
+
+
+Restart expo
+- npx expo start -c

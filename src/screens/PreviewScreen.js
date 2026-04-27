@@ -2,7 +2,7 @@
 
 
 
-import { View, Text, Button, ScrollView, Image } from 'react-native';
+import { View, Text, Button, ScrollView, Image, Alert, Platform, ToastAndroid } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generatePDF } from '../services/pdfService';
 import { saveQuotation, updateQuotation  } from '../services/storageService';
@@ -23,30 +23,54 @@ export default function PreviewScreen({ route }) {
     }
   };
 
+const showMessage = (msg) => {
+  if (Platform.OS === 'android') {
+    ToastAndroid.show(msg, ToastAndroid.SHORT);
+  } else {
+    Alert.alert(msg);
+  }
+};
+
 
 const handleSaveQuotation = async () => {
 
-  let success = false;
+  const performSave = async () => {
+    let success = false;
 
-  // 👉 যদি ID already থাকে → UPDATE
+    if (data.id) {
+      success = await updateQuotation(data);
+    } else {
+      const newData = {
+        ...data,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+      };
+
+      success = await saveQuotation(newData);
+    }
+
+    if (success) {
+      showMessage(data.id ? 'Quotation updated!' : 'Quotation saved!');
+      
+      // 👉 redirect to History
+      navigation.navigate('History');
+    } else {
+      showMessage('Something went wrong!');
+    }
+  };
+
+  // 👉 confirm only for update
   if (data.id) {
-    success = await updateQuotation(data);
-  } 
-  // 👉 না থাকলে → NEW SAVE
-  else {
-    const newData = {
-      ...data,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-    };
-
-    success = await saveQuotation(newData);
-  }
-
-  if (success) {
-    alert('Quotation saved successfully!');
+    Alert.alert(
+      'Update Quotation',
+      'Are you sure you want to update this quotation?',
+      [
+        { text: 'Cancel' },
+        { text: 'Update', onPress: performSave }
+      ]
+    );
   } else {
-    alert('Failed to save quotation');
+    performSave();
   }
 };
 
