@@ -507,7 +507,7 @@ const isFiltering = search || minAmount || maxAmount || fromDate || toDate;
 
       </View>
 
-      {/* CLEAR */}
+      {/* Reset or CLEAR all input field */}
       <TouchableOpacity
         onPress={() => {
           setSearch('');

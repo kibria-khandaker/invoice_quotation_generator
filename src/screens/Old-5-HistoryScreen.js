@@ -1,7 +1,7 @@
 // src/screens/HistoryScreen.js
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -387,69 +387,74 @@ const handleBulkDelete = () => {
           <Ionicons name={isFilterVisible ? "chevron-up" : "chevron-down"} size={18} color="#555" />
         </TouchableOpacity>
       </View>
-{/* yyyyyyyyyyyyyyyyyyy  */}
-{/* 🔴 লাল দাগের অংশ (টোগল হবে) - Super Compact Version */}
+
+{/* 🔴 লাল দাগের অংশ (টোগল হবে) */}
       {isFilterVisible && (
-        <View style={{ backgroundColor: '#fff', paddingBottom: 5, borderBottomWidth: 1, borderColor: '#eee' }}>
+        <View style={{ backgroundColor: '#fff', paddingBottom: 10, borderBottomWidth: 1, borderColor: '#eee', marginBottom: 10 }}>
           
-          {/* => ১ম এরিয়া: ফিল্টার ও সর্টিং (অল্প জায়গায়) */}
-          <View style={{ backgroundColor: '#f8f9fa', margin: 5, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#e9ecef' }}>
-            <View style={{ flexDirection: 'row', marginBottom: 5 }}>
-              <TextInput placeholder="Min" value={minAmount} keyboardType="numeric" onChangeText={(t) => { setMinAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 5, marginRight: 5, borderRadius: 5, fontSize: 12, backgroundColor: '#fff' }} />
-              <TextInput placeholder="Max" value={maxAmount} keyboardType="numeric" onChangeText={(t) => { setMaxAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 5, borderRadius: 5, fontSize: 12, backgroundColor: '#fff' }} />
+          {/* => ১ম এরিয়া গ্রুপ: ফিল্টার ও সর্টিং */}
+          <View style={{ backgroundColor: '#f8f9fa', margin: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e9ecef' }}>
+            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#6c757d', marginBottom: 5 }}>FILTERS & SORTING</Text>
+            <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+              <TextInput placeholder="Min" value={minAmount} keyboardType="numeric" onChangeText={(t) => { setMinAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 8, marginRight: 5, borderRadius: 6, backgroundColor: '#fff' }} />
+              <TextInput placeholder="Max" value={maxAmount} keyboardType="numeric" onChangeText={(t) => { setMaxAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 8, marginLeft: 5, borderRadius: 6, backgroundColor: '#fff' }} />
             </View>
-            <View style={{ flexDirection: 'row', marginBottom: 5 }}>
-              <TouchableOpacity onPress={() => setShowFromPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 7, marginRight: 5, borderRadius: 5, backgroundColor: '#fff' }}><Text style={{fontSize: 11}}>{fromDate || 'From'}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowToPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 7, borderRadius: 5, backgroundColor: '#fff' }}><Text style={{fontSize: 11}}>{toDate || 'To'}</Text></TouchableOpacity>
+            <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+              <TouchableOpacity onPress={() => setShowFromPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 10, marginRight: 5, borderRadius: 6, backgroundColor: '#fff' }}><Text>{fromDate || 'From Date'}</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowToPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 10, marginLeft: 5, borderRadius: 6, backgroundColor: '#fff' }}><Text>{toDate || 'To Date'}</Text></TouchableOpacity>
             </View>
-            
-            {/* সর্টিং বাটনগুলো এখন এক লাইনে বাম-ডানে স্ক্রল হবে */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {['latest', 'oldest', 'amount_high', 'amount_low', 'az'].map(type => (
-                <TouchableOpacity key={type} onPress={() => { setSortType(type); setCurrentPage(1); }} style={{ padding: 6, backgroundColor: sortType === type ? '#007bff' : '#dee2e6', borderRadius: 5, marginRight: 5 }}>
-                  <Text style={{ color: sortType === type ? '#fff' : '#495057', fontSize: 10 }}>{type.toUpperCase()}</Text>
+                <TouchableOpacity key={type} onPress={() => { setSortType(type); setCurrentPage(1); }} style={{ padding: 6, backgroundColor: sortType === type ? '#007bff' : '#dee2e6', borderRadius: 5, margin: 2 }}>
+                  <Text style={{ color: sortType === type ? '#fff' : '#495057', fontSize: 11 }}>{type.toUpperCase()}</Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
 
-          {/* => ২য় ও ৩য় এরিয়া গ্রুপ: সিলেকশন ও অ্যাকশন (একত্রে ছোট করা হয়েছে) */}
-          <View style={{ backgroundColor: '#e7f3ff', margin: 5, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#b1d7ff' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <TouchableOpacity onPress={() => setIsSelectionMode(!isSelectionMode)} style={{ backgroundColor: isSelectionMode ? '#28a745' : '#007bff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 5 }}>
-                <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>{isSelectionMode ? 'Selection ON' : 'Select Items'}</Text>
+          {/* => ২য় এরিয়া গ্রুপ: সিলেকশন মোড */}
+          <View style={{ backgroundColor: '#e7f3ff', margin: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#b1d7ff' }}>
+            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#0056b3', marginBottom: 5 }}>SELECTION MODE</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => setIsSelectionMode(!isSelectionMode)} style={{ backgroundColor: isSelectionMode ? '#28a745' : '#007bff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, marginRight: 5 }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>{isSelectionMode ? 'Selection ON' : 'Select Items'}</Text>
               </TouchableOpacity>
               
               {isSelectionMode && (
-                <View style={{ flexDirection: 'row' }}>
-                  <TouchableOpacity onPress={selectAll} style={{ padding: 5 }}><Text style={{ color: '#17a2b8', fontSize: 11, fontWeight: 'bold' }}>All</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={selectAllHistory} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#6f42c1', fontSize: 11, fontWeight: 'bold' }}>History</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={clearSelection} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#dc3545', fontSize: 11, fontWeight: 'bold' }}>Clear</Text></TouchableOpacity>
-                </View>
+                <>
+                  <TouchableOpacity onPress={selectAll} style={{ padding: 8, marginRight: 5 }}><Text style={{ color: '#17a2b8', fontWeight: '600' }}>All</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={selectAllHistory} style={{ padding: 8, marginRight: 5 }}><Text style={{ color: '#6f42c1', fontWeight: '600' }}>All Data</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={clearSelection} style={{ padding: 8 }}><Text style={{ color: '#dc3545', fontWeight: '600' }}>Clear</Text></TouchableOpacity>
+                </>
               )}
             </View>
-
-            {isSelectionMode && (
-              <View style={{ flexDirection: 'row', marginTop: 8, borderTopWidth: 1, borderColor: '#b1d7ff', paddingTop: 8 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <TouchableOpacity onPress={exportSelectedPDFs} style={{ backgroundColor: '#6f42c1', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>PDFs</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => exportSmartCSV(selectedItems)} style={{ backgroundColor: '#17a2b8', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>CSVs</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={handleBulkDelete} style={{ backgroundColor: "#dc3545", padding: 6, borderRadius: 5 }}> 
-                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: 'bold' }}>Delete ({selectedItems.length})</Text>
-                    </TouchableOpacity>
-                </ScrollView>
-              </View>
-            )}
           </View>
 
-          {/* => ৪র্থ এরিয়া গ্রুপ: ব্যাকআপ ও ইমপোর্ট (সবচেয়ে নিচে ছোট করে) */}
-          <View style={{ flexDirection: 'row', marginHorizontal: 5, marginBottom: 5 }}>
-            <TouchableOpacity onPress={exportAllSmartCSV} style={{ flex: 1, backgroundColor: "#343a40", padding: 8, borderRadius: 5, marginRight: 5 }}>
-              <Text style={{ color: "#fff", textAlign: "center", fontSize: 11 }}>Backup All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleImportCSV} style={{ flex: 1, backgroundColor: "#28a745", padding: 8, borderRadius: 5 }}>
-              <Text style={{ color: "#fff", textAlign: "center", fontSize: 11 }}>Import CSV</Text>
-            </TouchableOpacity>
+          {/* => ৩য় এরিয়া গ্রুপ: অ্যাকশন (শুধু সিলেকশন মোড অন থাকলে দেখাবে) */}
+          {isSelectionMode && (
+            <View style={{ backgroundColor: '#fff3cd', margin: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ffeeba' }}>
+              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#856404', marginBottom: 5 }}>BULK ACTIONS</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                <TouchableOpacity onPress={exportSelectedPDFs} style={{ backgroundColor: '#6f42c1', padding: 8, borderRadius: 6, marginRight: 8, marginTop: 2 }}><Text style={{ color: '#fff', fontSize: 12 }}>Export PDFs</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => exportSmartCSV(selectedItems)} style={{ backgroundColor: '#17a2b8', padding: 8, borderRadius: 6, marginRight: 8, marginTop: 2 }}><Text style={{ color: '#fff', fontSize: 12 }}>Export CSVs</Text></TouchableOpacity>
+                <TouchableOpacity onPress={handleBulkDelete} style={{ backgroundColor: "#dc3545", padding: 8, borderRadius: 6, marginTop: 2 }}> 
+                  <Text style={{ color: "#fff", fontSize: 12, fontWeight: 'bold' }}>Delete ({selectedItems.length})</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* => ৪র্থ এরিয়া গ্রুপ: ব্যাকআপ ও ইমপোর্ট */}
+          <View style={{ backgroundColor: '#f1f3f5', margin: 8, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#ced4da' }}>
+            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#343a40', marginBottom: 8 }}>DATA MANAGEMENT</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <TouchableOpacity onPress={exportAllSmartCSV} style={{ flex: 1.5, backgroundColor: "#343a40", padding: 10, borderRadius: 6, marginRight: 5 }}>
+                <Text style={{ color: "#fff", textAlign: "center", fontSize: 12 }}>Export Full Backup</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleImportCSV} style={{ flex: 1, backgroundColor: "#28a745", padding: 10, borderRadius: 6 }}>
+                <Text style={{ color: "#fff", textAlign: "center", fontSize: 12 }}>Import CSV</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
         </View>

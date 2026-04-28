@@ -82,7 +82,9 @@ const pickAndProcessImage = async (field) => {
 
     // pick image
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      // mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      // mediaTypes: ImagePicker.MediaType.Images, // আপডেট করা হলো
+      mediaTypes: ['images'],
       base64: true,
       quality: 0.7,
     });
