@@ -345,6 +345,7 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
 {/* xxxxxxxxxxxxxxxxxx        */}
+
 {/* 🔍 Search Input & Reset Button (সবসময় দেখা যাবে) */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, marginTop: 10 }}>
         <TextInput 
@@ -353,39 +354,24 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
           onChangeText={(t) => { setSearch(t); setCurrentPage(1); }} 
           style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 8, backgroundColor: '#fff' }} 
         />
-        
-        {/* 🧹 Reset/Refresh Button */}
         <TouchableOpacity 
           onPress={() => {
-            setSearch('');
-            setFromDate('');
-            setToDate('');
-            setMinAmount('');
-            setMaxAmount('');
-            setSortType('latest');
-            setCurrentPage(1);
+            setSearch(''); setFromDate(''); setToDate(''); setMinAmount(''); setMaxAmount(''); setSortType('latest'); setCurrentPage(1);
           }}
-          style={{ 
-            marginLeft: 8, 
-            padding: 10, 
-            backgroundColor: '#f8d7da', // হালকা লাল ব্যাকগ্রাউন্ড
-            borderRadius: 8, 
-            borderWidth: 1, 
-            borderColor: '#f5c6cb',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
+          style={{ marginLeft: 8, padding: 10, backgroundColor: '#f8d7da', borderRadius: 8, borderWidth: 1, borderColor: '#f5c6cb' }}
         >
           <Ionicons name="refresh" size={20} color="#dc3545" /> 
         </TouchableOpacity>
       </View>
-      
-      {/* 🔽 Summary & Toggle Button (সবসময় দেখা যাবে) */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, marginVertical: 10 }}>
+
+      {/* 🔽 Summary, Pagination Limit & Toggle Button */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, marginTop: 10, marginBottom: 5 }}>
+        
         {/* বাম পাশে ছোট করে সামারি */}
-        <Text style={{ fontWeight: "400", fontSize: 10, color: '#444' }}>
-          Showing: {filteredList.length} | Total: {list.length}
+        <Text style={{ fontSize: 10, color: '#666', fontWeight: '500' }}>
+          Total: {list.length} | In: {filteredList.length}
         </Text>
+
         {/* মাঝখানে ড্রপডাউন স্টাইল সিলেক্টর */}
         <View style={{ position: 'relative' }}>
           <TouchableOpacity 
@@ -401,7 +387,7 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
               borderColor: '#ddd' 
             }}
           >
-            <Text style={{ fontSize: 10, color: '#555', fontWeight: 'bold' }}>
+            <Text style={{ fontSize: 11, color: '#555', fontWeight: 'bold' }}>
               Show: {itemsPerPage}
             </Text>
             <Ionicons name="chevron-down" size={14} color="#555" style={{ marginLeft: 3 }} />
@@ -436,7 +422,7 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
                     borderBottomColor: '#eee' 
                   }}
                 >
-                  <Text style={{ fontSize: 11, color: itemsPerPage === num ? '#007bff' : '#333', fontWeight: itemsPerPage === num ? 'bold' : 'normal' }}>
+                  <Text style={{ fontSize: 12, color: itemsPerPage === num ? '#007bff' : '#333', fontWeight: itemsPerPage === num ? 'bold' : 'normal' }}>
                     {num}
                   </Text>
                 </TouchableOpacity>
@@ -450,12 +436,13 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
           onPress={() => setIsFilterVisible(!isFilterVisible)} 
           style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: '#ddd' }}
         >
-          <Text style={{ marginRight: 4, fontSize: 10, color: '#555', fontWeight: 'bold' }}>
-            {isFilterVisible ? "Hide Menu" : "Show Menu"}
+          <Text style={{ marginRight: 4, fontSize: 11, color: '#555', fontWeight: 'bold' }}>
+            {isFilterVisible ? "Hide" : "Menu"}
           </Text>
-          <Ionicons name={isFilterVisible ? "chevron-up" : "chevron-down"} size={14} color="#555" />
+          <Ionicons name={isFilterVisible ? "chevron-up" : "chevron-down"} size={16} color="#555" />
         </TouchableOpacity>
       </View>
+
 {/* yyyyyyyyyyyyyyyyyyy  */}
 {/* 🔴 লাল দাগের অংশ (টোগল হবে) */}
       {isFilterVisible && (
