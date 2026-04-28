@@ -36,6 +36,10 @@ export default function HistoryScreen({ navigation }) {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [sortType, setSortType] = useState('latest');
+// sub toggle
+const [isFilterSubOpen, setIsFilterSubOpen] = useState(false);
+const [isSelectionSubOpen, setIsSelectionSubOpen] = useState(false);
+const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
 
   // Import/Backup States
   const [importHasConflict, setImportHasConflict] = useState(false);
@@ -388,69 +392,91 @@ const handleBulkDelete = () => {
         </TouchableOpacity>
       </View>
 {/* yyyyyyyyyyyyyyyyyyy  */}
-{/* 🔴 লাল দাগের অংশ (টোগল হবে) - Super Compact Version */}
+{/* 🔴 লাল দাগের অংশ (টোগল হবে) */}
       {isFilterVisible && (
         <View style={{ backgroundColor: '#fff', paddingBottom: 5, borderBottomWidth: 1, borderColor: '#eee' }}>
           
-          {/* => ১ম এরিয়া: ফিল্টার ও সর্টিং (অল্প জায়গায়) */}
-          <View style={{ backgroundColor: '#f8f9fa', margin: 5, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#e9ecef' }}>
-            <View style={{ flexDirection: 'row', marginBottom: 5 }}>
-              <TextInput placeholder="Min" value={minAmount} keyboardType="numeric" onChangeText={(t) => { setMinAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 5, marginRight: 5, borderRadius: 5, fontSize: 12, backgroundColor: '#fff' }} />
-              <TextInput placeholder="Max" value={maxAmount} keyboardType="numeric" onChangeText={(t) => { setMaxAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 5, borderRadius: 5, fontSize: 12, backgroundColor: '#fff' }} />
-            </View>
-            <View style={{ flexDirection: 'row', marginBottom: 5 }}>
-              <TouchableOpacity onPress={() => setShowFromPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 7, marginRight: 5, borderRadius: 5, backgroundColor: '#fff' }}><Text style={{fontSize: 11}}>{fromDate || 'From'}</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowToPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 7, borderRadius: 5, backgroundColor: '#fff' }}><Text style={{fontSize: 11}}>{toDate || 'To'}</Text></TouchableOpacity>
-            </View>
+          {/* 🔘 সাব-মেনু বাটনগুলোর সারি (Row) */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', padding: 8, backgroundColor: '#f1f3f5', margin: 5, borderRadius: 10 }}>
             
-            {/* সর্টিং বাটনগুলো এখন এক লাইনে বাম-ডানে স্ক্রল হবে */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
-              {['latest', 'oldest', 'amount_high', 'amount_low', 'az'].map(type => (
-                <TouchableOpacity key={type} onPress={() => { setSortType(type); setCurrentPage(1); }} style={{ padding: 6, backgroundColor: sortType === type ? '#007bff' : '#dee2e6', borderRadius: 5, marginRight: 5 }}>
-                  <Text style={{ color: sortType === type ? '#fff' : '#495057', fontSize: 10 }}>{type.toUpperCase()}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            <TouchableOpacity onPress={() => setIsFilterSubOpen(!isFilterSubOpen)} style={{ alignItems: 'center', flex: 1 }}>
+              <Ionicons name="funnel-outline" size={18} color={isFilterSubOpen ? "#007bff" : "#495057"} />
+              <Text style={{ fontSize: 9, fontWeight: 'bold', color: isFilterSubOpen ? "#007bff" : "#495057", marginTop: 2 }}>FILTERS</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setIsSelectionSubOpen(!isSelectionSubOpen)} style={{ alignItems: 'center', flex: 1, borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#dee2e6' }}>
+              <Ionicons name="checkmark-circle-outline" size={18} color={isSelectionSubOpen ? "#007bff" : "#495057"} />
+              <Text style={{ fontSize: 9, fontWeight: 'bold', color: isSelectionSubOpen ? "#007bff" : "#495057", marginTop: 2 }}>SELECT</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setIsBackupSubOpen(!isBackupSubOpen)} style={{ alignItems: 'center', flex: 1 }}>
+              <Ionicons name="cloud-download-outline" size={18} color={isBackupSubOpen ? "#007bff" : "#495057"} />
+              <Text style={{ fontSize: 9, fontWeight: 'bold', color: isBackupSubOpen ? "#007bff" : "#495057", marginTop: 2 }}>BACKUP</Text>
+            </TouchableOpacity>
+
           </View>
 
-          {/* => ২য় ও ৩য় এরিয়া গ্রুপ: সিলেকশন ও অ্যাকশন (একত্রে ছোট করা হয়েছে) */}
-          <View style={{ backgroundColor: '#e7f3ff', margin: 5, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#b1d7ff' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <TouchableOpacity onPress={() => setIsSelectionMode(!isSelectionMode)} style={{ backgroundColor: isSelectionMode ? '#28a745' : '#007bff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 5 }}>
-                <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>{isSelectionMode ? 'Selection ON' : 'Select Items'}</Text>
-              </TouchableOpacity>
-              
+          {/* 📂 সাব-মেনু কন্টেন্ট এরিয়া */}
+          
+          {/* ১. ফিল্টার কন্টেন্ট */}
+          {isFilterSubOpen && (
+            <View style={{ backgroundColor: '#f8f9fa', marginHorizontal: 8, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#dee2e6', marginBottom: 5 }}>
+              <View style={{ flexDirection: 'row', marginBottom: 5 }}>
+                <TextInput placeholder="Min" value={minAmount} keyboardType="numeric" onChangeText={(t) => { setMinAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 5, marginRight: 5, borderRadius: 5, fontSize: 12, backgroundColor: '#fff' }} />
+                <TextInput placeholder="Max" value={maxAmount} keyboardType="numeric" onChangeText={(t) => { setMaxAmount(t); setCurrentPage(1); }} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 5, borderRadius: 5, fontSize: 12, backgroundColor: '#fff' }} />
+              </View>
+              <View style={{ flexDirection: 'row', marginBottom: 5 }}>
+                <TouchableOpacity onPress={() => setShowFromPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 7, marginRight: 5, borderRadius: 5, backgroundColor: '#fff' }}><Text style={{fontSize: 11}}>{fromDate || 'From'}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowToPicker(true)} style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 7, borderRadius: 5, backgroundColor: '#fff' }}><Text style={{fontSize: 11}}>{toDate || 'To'}</Text></TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['latest', 'oldest', 'amount_high', 'amount_low', 'az'].map(type => (
+                  <TouchableOpacity key={type} onPress={() => { setSortType(type); setCurrentPage(1); }} style={{ padding: 6, backgroundColor: sortType === type ? '#007bff' : '#dee2e6', borderRadius: 5, marginRight: 5 }}>
+                    <Text style={{ color: sortType === type ? '#fff' : '#495057', fontSize: 10 }}>{type.toUpperCase()}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* ২. সিলেকশন কন্টেন্ট */}
+          {isSelectionSubOpen && (
+            <View style={{ backgroundColor: '#e7f3ff', marginHorizontal: 8, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#b1d7ff', marginBottom: 5 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <TouchableOpacity onPress={() => setIsSelectionMode(!isSelectionMode)} style={{ backgroundColor: isSelectionMode ? '#28a745' : '#007bff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 5 }}>
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>{isSelectionMode ? 'Selection ON' : 'Select Items'}</Text>
+                </TouchableOpacity>
+                {isSelectionMode && (
+                  <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={selectAll} style={{ padding: 5 }}><Text style={{ color: '#17a2b8', fontSize: 11, fontWeight: 'bold' }}>All</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={selectAllHistory} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#6f42c1', fontSize: 11, fontWeight: 'bold' }}>History</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={clearSelection} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#dc3545', fontSize: 11, fontWeight: 'bold' }}>Clear</Text></TouchableOpacity>
+                  </View>
+                )}
+              </View>
               {isSelectionMode && (
-                <View style={{ flexDirection: 'row' }}>
-                  <TouchableOpacity onPress={selectAll} style={{ padding: 5 }}><Text style={{ color: '#17a2b8', fontSize: 11, fontWeight: 'bold' }}>All</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={selectAllHistory} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#6f42c1', fontSize: 11, fontWeight: 'bold' }}>History</Text></TouchableOpacity>
-                  <TouchableOpacity onPress={clearSelection} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#dc3545', fontSize: 11, fontWeight: 'bold' }}>Clear</Text></TouchableOpacity>
-                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8, borderTopWidth: 1, borderColor: '#b1d7ff', paddingTop: 8 }}>
+                  <TouchableOpacity onPress={exportSelectedPDFs} style={{ backgroundColor: '#6f42c1', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>PDFs</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => exportSmartCSV(selectedItems)} style={{ backgroundColor: '#17a2b8', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>CSVs</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handleBulkDelete} style={{ backgroundColor: "#dc3545", padding: 6, borderRadius: 5 }}> 
+                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: 'bold' }}>Delete ({selectedItems.length})</Text>
+                  </TouchableOpacity>
+                </ScrollView>
               )}
             </View>
+          )}
 
-            {isSelectionMode && (
-              <View style={{ flexDirection: 'row', marginTop: 8, borderTopWidth: 1, borderColor: '#b1d7ff', paddingTop: 8 }}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <TouchableOpacity onPress={exportSelectedPDFs} style={{ backgroundColor: '#6f42c1', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>PDFs</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={() => exportSmartCSV(selectedItems)} style={{ backgroundColor: '#17a2b8', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>CSVs</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={handleBulkDelete} style={{ backgroundColor: "#dc3545", padding: 6, borderRadius: 5 }}> 
-                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: 'bold' }}>Delete ({selectedItems.length})</Text>
-                    </TouchableOpacity>
-                </ScrollView>
-              </View>
-            )}
-          </View>
-
-          {/* => ৪র্থ এরিয়া গ্রুপ: ব্যাকআপ ও ইমপোর্ট (সবচেয়ে নিচে ছোট করে) */}
-          <View style={{ flexDirection: 'row', marginHorizontal: 5, marginBottom: 5 }}>
-            <TouchableOpacity onPress={exportAllSmartCSV} style={{ flex: 1, backgroundColor: "#343a40", padding: 8, borderRadius: 5, marginRight: 5 }}>
-              <Text style={{ color: "#fff", textAlign: "center", fontSize: 11 }}>Backup All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleImportCSV} style={{ flex: 1, backgroundColor: "#28a745", padding: 8, borderRadius: 5 }}>
-              <Text style={{ color: "#fff", textAlign: "center", fontSize: 11 }}>Import CSV</Text>
-            </TouchableOpacity>
-          </View>
+          {/* ৩. ব্যাকআপ কন্টেন্ট */}
+          {isBackupSubOpen && (
+            <View style={{ flexDirection: 'row', marginHorizontal: 8, padding: 8, backgroundColor: '#f1f3f5', borderRadius: 8, borderWidth: 1, borderColor: '#ced4da', marginBottom: 5 }}>
+              <TouchableOpacity onPress={exportAllSmartCSV} style={{ flex: 1, backgroundColor: "#343a40", padding: 8, borderRadius: 5, marginRight: 5 }}>
+                <Text style={{ color: "#fff", textAlign: "center", fontSize: 11 }}>Full Backup</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleImportCSV} style={{ flex: 1, backgroundColor: "#28a745", padding: 8, borderRadius: 5 }}>
+                <Text style={{ color: "#fff", textAlign: "center", fontSize: 11 }}>Import CSV</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
         </View>
       )}
