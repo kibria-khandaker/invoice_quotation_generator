@@ -1,4 +1,5 @@
 // src/screens/HistoryScreen.js
+// everything is good working b4 add new looking selection UI
 
 import React, { useEffect, useState } from 'react';
 import { 
@@ -504,91 +505,29 @@ export default function HistoryScreen({ navigation }) {
           {/* 2. Selection Sub-Menu Content */}
           {isSelectionSubOpen && (
             <View style={{ backgroundColor: '#e7f3ff', marginHorizontal: 8, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#b1d7ff', marginBottom: 5 }}>
-              
-              {/* উপরের রো: ফিক্সড বাটন এবং স্ক্রোলযোগ্য অপশন */}
-              <View>
-                
-                {/* ১. সিলেকশন টোগল বাটন (এটি ফিক্সড থাকবে) */}
-                <TouchableOpacity 
-                  onPress={() => setIsSelectionMode(!isSelectionMode)} 
-                  style={{ 
-                    backgroundColor: isSelectionMode ? '#28a745' : '#007bff', 
-                    // borderColor: isSelectionMode ? '#28a745' : '#007bff', 
-                    // borderWidth: 1, 
-                    paddingHorizontal: 10, 
-                    paddingVertical: 6, 
-                    borderRadius: 5, 
-                    marginRight: 8,
-                    zIndex: 1, // নিশ্চিত করতে যে এটি উপরে আছে
-                    alignItems: 'center'
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>
-                    {isSelectionMode ? 'Selection ON' : 'Select Items'}
-                  </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <TouchableOpacity onPress={() => setIsSelectionMode(!isSelectionMode)} style={{ backgroundColor: isSelectionMode ? '#28a745' : '#007bff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 5 }}>
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>{isSelectionMode ? 'Selection ON' : 'Select Items'}</Text>
                 </TouchableOpacity>
-
-                {/* ২. বাকি সব বাটন যা স্ক্রল হবে */}
                 {isSelectionMode && (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8, borderTopWidth: 1, borderColor: '#b1d7ff', paddingTop: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      
-                      {/* কাউন্টার ব্যাজ */}
-                      {selectedItems.length > 0 && (
-                        <View style={{ 
-                          backgroundColor: '#fff', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 5, 
-                          borderWidth: 1, borderColor: '#007bff', flexDirection: 'row', alignItems: 'center', marginRight: 8 
-                        }}>
-                          <Ionicons name="layers-outline" size={12} color="#007bff" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#007bff', fontSize: 10, fontWeight: 'bold' }}>
-                            {selectedItems.length} Selected
-                          </Text>
-                        </View>
-                      )}
-
-                      {/* Current Page বাটন */}
-                      <TouchableOpacity onPress={selectAll} style={{ padding: 6, marginRight: 5, borderRadius: 5, borderWidth: 1, borderColor: '#17a2b8' }}>
-                        <Text style={{ color: '#17a2b8', fontSize: 11, fontWeight: 'bold', }}>Select all Current Page items</Text>
-                      </TouchableOpacity>
-
-                      {/* All History বাটন */}
-                      <TouchableOpacity onPress={selectAllHistory} style={{ padding: 6, marginRight: 5 ,borderRadius: 5, borderWidth: 1, borderColor: '#6f42c1'}}>
-                        <Text style={{ color: '#6f42c1', fontSize: 11, fontWeight: 'bold' }}>Select All History Pages items</Text>
-                      </TouchableOpacity>
-
-                      {/* Clear বাটন */}
-                      <TouchableOpacity 
-                        onPress={clearSelection} 
-                        style={{ paddingHorizontal: 8, paddingVertical: 4, marginLeft: 5, borderWidth: 1, borderColor: '#dc3545', borderRadius: 5 }}
-                      >
-                        <Text style={{ color: '#dc3545', fontSize: 11, fontWeight: 'bold' }}>Mark Clear</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </ScrollView>
+                  <View style={{ flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={selectAll} style={{ padding: 5 }}><Text style={{ color: '#17a2b8', fontSize: 11, fontWeight: 'bold' }}>All</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={selectAllHistory} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#6f42c1', fontSize: 11, fontWeight: 'bold' }}>History</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={clearSelection} style={{ padding: 5, marginLeft: 5 }}><Text style={{ color: '#dc3545', fontSize: 11, fontWeight: 'bold' }}>Clear</Text></TouchableOpacity>
+                  </View>
                 )}
               </View>
-
-              {/* নিচের রো: এক্সপোর্ট এবং ডিলিট অ্যাকশন বাটনসমূহ (এটি আগের মতোই স্ক্রোলযোগ্য থাকবে) */}
               {isSelectionMode && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8, borderTopWidth: 1, borderColor: '#b1d7ff', paddingTop: 8 }}>
-                  <TouchableOpacity onPress={exportSelectedPDFs} style={{ backgroundColor: '#6f42c1', padding: 6, borderRadius: 5, marginRight: 8 }}>
-                    <Text style={{ color: '#fff', fontSize: 10 }}>Export Selected PDFs</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity onPress={() => exportSmartCSV(selectedItems)} style={{ backgroundColor: '#17a2b8', padding: 6, borderRadius: 5, marginRight: 8 }}>
-                    <Text style={{ color: '#fff', fontSize: 10 }}>Export Selected CSVs for Backup</Text>
-                  </TouchableOpacity>
-                  
+                  <TouchableOpacity onPress={exportSelectedPDFs} style={{ backgroundColor: '#6f42c1', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>PDFs</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => exportSmartCSV(selectedItems)} style={{ backgroundColor: '#17a2b8', padding: 6, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff', fontSize: 10 }}>CSVs</Text></TouchableOpacity>
                   <TouchableOpacity onPress={handleBulkDelete} style={{ backgroundColor: "#dc3545", padding: 6, borderRadius: 5 }}> 
-                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: 'bold' }}>
-                      Delete ({selectedItems.length}) selected items
-                    </Text>
+                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: 'bold' }}>Delete ({selectedItems.length})</Text>
                   </TouchableOpacity>
                 </ScrollView>
               )}
             </View>
           )}
-
 
           {/* 3. Backup Sub-Menu Content */}
           {isBackupSubOpen && (
