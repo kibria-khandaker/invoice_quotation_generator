@@ -1,10 +1,7 @@
 // src/screens/HistoryScreen.js
 
 import React, { useEffect, useState } from 'react';
-import { 
-  View, Text, FlatList, TouchableOpacity, Alert, 
-  TextInput, ScrollView 
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, ScrollView  } from 'react-native';
 import JSZip from 'jszip';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +11,9 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// স্টাইল ইমপোর্ট
+import styles from './HistoryScreenStyle';
 
 // Custom Services and Templates
 import { getQuotations, deleteQuotation } from '../services/storageService';
@@ -110,16 +110,7 @@ export default function HistoryScreen({ navigation }) {
     }
   };
 
-  // --- Selected PDF Bulk Export ---
-  // const exportSelectedPDFs = async () => {
-  //   if (selectedItems.length === 0) return Alert.alert("No Selection", "Please select at least one");
-  //   for (const item of selectedItems) {
-  //     await exportAsPDF(item);
-  //   }
-  // };
-
-
-// --------------------------------------------------------
+  // --------------------------------------------------------
   // Selected PDF Bulk Export (Smart: Single = PDF, Multi = ZIP)
   // --------------------------------------------------------
   const exportSelectedPDFs = async () => {
@@ -366,33 +357,77 @@ export default function HistoryScreen({ navigation }) {
     ]);
   };
 
-  const renderItem = ({ item }) => (
-    <View style={{ padding: 12, borderBottomWidth: 1, borderColor: '#ccc' }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{item.clientName || 'No Client'}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {isSelectionMode && (
-            <TouchableOpacity onPress={() => toggleSelectItem(item)} style={{ marginRight: 15 }}>
-              <Ionicons name={selectedItems.find(i => i.id === item.id) ? "checkbox" : "square-outline"} size={22} color="black" />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => handleDelete(item.id)}>
-            <Ionicons name="trash-outline" size={20} color="red" />
-          </TouchableOpacity>
-        </View>
+
+  
+const renderItem = ({ item }) => (
+  <View style={styles.itemCard}>
+    {/* উপরের অংশ: নাম, তারিখ এবং ডিলিট/সিলেক্ট */}
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.clientNameText} numberOfLines={1}>
+          {item.clientName || 'No Client'}
+        </Text>
+        <Text style={styles.dateText}>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
       </View>
-      <Text>Total: {item.grandTotal}</Text>
-      <Text style={{ fontSize: 12, color: '#666' }}>{new Date(item.createdAt).toLocaleString()}</Text>
-      <View style={{ flexDirection: 'row', marginTop: 8, flexWrap: 'wrap' }}>
-        <TouchableOpacity onPress={() => navigation.navigate('Preview', item)} style={{ backgroundColor: '#007bff', padding: 8, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff' }}>Open</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Create', { editData: item })} style={{ backgroundColor: '#28a745', padding: 8, borderRadius: 5, marginRight: 5 }}><Text style={{ color: '#fff' }}>Edit</Text></TouchableOpacity>
-        <TouchableOpacity onPress={() => exportAsPDF(item)} style={{ backgroundColor: '#6f42c1', padding: 8, borderRadius: 5 }}><Text style={{ color: '#fff' }}>PDF</Text></TouchableOpacity>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {isSelectionMode && (
+          <TouchableOpacity onPress={() => toggleSelectItem(item)} style={{ marginRight: 12 }}>
+            <Ionicons 
+              name={selectedItems.find(i => i.id === item.id) ? "checkbox" : "square-outline"} 
+              size={24} 
+              color="#007bff" 
+            />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity onPress={() => handleDelete(item.id)}>
+          <Ionicons name="trash-outline" size={22} color="#ff5252" />
+        </TouchableOpacity>
       </View>
     </View>
-  );
+
+    {/* মাঝখানের অংশ: টোটাল অ্যামাউন্ট */}
+    <View>
+      <Text style={styles.amountLabel}>Total Amount</Text>
+      <Text style={styles.amountText}>৳ {item.grandTotal}</Text>
+    </View>
+
+    {/* নিচের অংশ: অ্যাকশন বাটনসমূহ (আপনার ছবির মতো রঙ ও স্টাইল) */}
+    <View style={styles.actionButtonGroup}>
+      {/* View/Open Button */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('Preview', item)} 
+        style={[styles.modernBtn, { backgroundColor: '#eef6ff' }]}
+      >
+        <Ionicons name="eye-outline" size={18} color="#007bff" />
+        <Text style={[styles.btnText, { color: '#007bff' }]}>View</Text>
+      </TouchableOpacity>
+
+      {/* Edit Button */}
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('Create', { editData: item })} 
+        style={[styles.modernBtn, { backgroundColor: '#e9fbf0' }]}
+      >
+        <Ionicons name="create-outline" size={18} color="#28a745" />
+        <Text style={[styles.btnText, { color: '#28a745' }]}>Edit</Text>
+      </TouchableOpacity>
+
+      {/* PDF Button */}
+      <TouchableOpacity 
+        onPress={() => exportAsPDF(item)} 
+        style={[styles.modernBtn, { backgroundColor: '#f3f0ff' }]}
+      >
+        <Ionicons name="download-outline" size={18} color="#6f42c1" />
+        <Text style={[styles.btnText, { color: '#6f42c1' }]}>PDF</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+); 
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={styles.historyMainContainer}>
       
       {/* ----------------------------------------------------
           A. SEARCH & RESET (সার্চ এবং রিসেট বাটন)
