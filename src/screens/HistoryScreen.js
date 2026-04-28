@@ -5,6 +5,7 @@ import {
   View, Text, FlatList, TouchableOpacity, Alert, 
   TextInput, ScrollView 
 } from 'react-native';
+import JSZip from 'jszip';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -110,12 +111,72 @@ export default function HistoryScreen({ navigation }) {
   };
 
   // --- Selected PDF Bulk Export ---
+  // const exportSelectedPDFs = async () => {
+  //   if (selectedItems.length === 0) return Alert.alert("No Selection", "Please select at least one");
+  //   for (const item of selectedItems) {
+  //     await exportAsPDF(item);
+  //   }
+  // };
+
+
+// --------------------------------------------------------
+  // Selected PDF Bulk Export (Smart: Single = PDF, Multi = ZIP)
+  // --------------------------------------------------------
   const exportSelectedPDFs = async () => {
-    if (selectedItems.length === 0) return Alert.alert("No Selection", "Please select at least one");
-    for (const item of selectedItems) {
-      await exportAsPDF(item);
+    const selectedCount = selectedItems.length;
+    if (selectedCount === 0) return Alert.alert("No Selection", "Please select at least one");
+
+    try {
+      setLoading(true);
+
+      // --- কেস ১: যদি মাত্র ১টি ফাইল সিলেক্ট করা হয় (নরমাল PDF শেয়ার) ---
+      if (selectedCount === 1) {
+        const item = selectedItems[0];
+        const html = generateQuotationHTML(item);
+        const { uri } = await Print.printToFileAsync({ html });
+        
+        // সরাসরি সেই PDF ফাইলটি শেয়ার হবে
+        await Sharing.shareAsync(uri);
+      } 
+      
+      // --- কেস ২: যদি ১টির বেশি ফাইল সিলেক্ট করা হয় (ZIP বান্ডেল শেয়ার) ---
+      else {
+        const zip = new JSZip();
+
+        for (const item of selectedItems) {
+          const html = generateQuotationHTML(item);
+          const { uri } = await Print.printToFileAsync({ html });
+          
+          const base64Data = await FileSystem.readAsStringAsync(uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+
+          const cleanName = (item.clientName || 'Quotation').replace(/\s+/g, '_');
+          const fileName = `${cleanName}_${item.id}.pdf`;
+          
+          zip.file(fileName, base64Data, { base64: true });
+        }
+
+        const zipBase64 = await zip.generateAsync({ type: "base64" });
+        const zipUri = FileSystem.cacheDirectory + `Quotations_Bundle_${Date.now()}.zip`;
+        await FileSystem.writeAsStringAsync(zipUri, zipBase64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        await Sharing.shareAsync(zipUri, {
+          mimeType: 'application/zip',
+          dialogTitle: `Share ${selectedCount} Quotations`,
+        });
+      }
+
+    } catch (error) {
+      console.log('Export Error:', error);
+      Alert.alert("Error", "Could not export files. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   // --- Smart CSV Export ---
   const exportSmartCSV = async (itemsToExport) => {
