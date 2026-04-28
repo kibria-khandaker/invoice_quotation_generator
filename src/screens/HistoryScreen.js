@@ -1,7 +1,10 @@
 // src/screens/HistoryScreen.js
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, TextInput, ScrollView } from 'react-native';
+import { 
+  View, Text, FlatList, TouchableOpacity, Alert, 
+  TextInput, ScrollView 
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -16,19 +19,20 @@ import { getQuotations, deleteQuotation } from '../services/storageService';
 import { generateQuotationHTML } from '../templates/quotationTemplate';
 
 export default function HistoryScreen({ navigation }) {
-  // --------------------------------------------------------
+  
+  // ========================================================
   // 1. STATE MANAGEMENT (অবস্থা ব্যবস্থাপনা)
-  // --------------------------------------------------------
+  // ========================================================
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
-  // Selection States
+  // --- Selection States ---
   const [selectedItems, setSelectedItems] = useState([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
 
-  // Filter & Sort States
+  // --- Filter & Sort States ---
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
   const [fromDate, setFromDate] = useState('');
@@ -36,25 +40,25 @@ export default function HistoryScreen({ navigation }) {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [sortType, setSortType] = useState('latest');
-// sub toggle
-const [isFilterSubOpen, setIsFilterSubOpen] = useState(false);
-const [isSelectionSubOpen, setIsSelectionSubOpen] = useState(false);
-const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
 
-  // Import/Backup States
+  // --- Sub-Menu Toggles ---
+  const [isFilterSubOpen, setIsFilterSubOpen] = useState(false);
+  const [isSelectionSubOpen, setIsSelectionSubOpen] = useState(false);
+  const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
+
+  // --- Import/Backup States ---
   const [importHasConflict, setImportHasConflict] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingFileUri, setPendingFileUri] = useState(null);
 
-  // Pagination States
+  // --- Pagination & View States ---
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // ডিফল্ট ১০টি
+  const [itemsPerPage, setItemsPerPage] = useState(10); 
   const [isShowMenuOpen, setIsShowMenuOpen] = useState(false);
-  // const ITEMS_PER_PAGE = 8;
 
-  // --------------------------------------------------------
+  // ========================================================
   // 2. DATA LOADING & EFFECTS (ডেটা লোড করা)
-  // --------------------------------------------------------
+  // ========================================================
   const loadData = async () => {
     setLoading(true);
     const data = await getQuotations();
@@ -67,9 +71,9 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
     return unsubscribe;
   }, [navigation]);
 
-  // --------------------------------------------------------
+  // ========================================================
   // 3. SELECTION LOGIC (আইটেম সিলেক্ট করার লজিক)
-  // --------------------------------------------------------
+  // ========================================================
   const toggleSelectItem = (item) => {
     const exists = selectedItems.find(i => i.id === item.id);
     if (exists) {
@@ -90,11 +94,11 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
     setIsSelectionMode(false);
   };
 
-  // --------------------------------------------------------
+  // ========================================================
   // 4. EXPORT FUNCTIONS (PDF, CSV এবং ব্যাকআপ এক্সপোর্ট)
-  // --------------------------------------------------------
+  // ========================================================
   
-  // Single PDF Export
+  // --- Single PDF Export ---
   const exportAsPDF = async (item) => {
     try {
       const html = generateQuotationHTML(item);
@@ -105,7 +109,7 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
     }
   };
 
-  // Selected PDF Bulk Export
+  // --- Selected PDF Bulk Export ---
   const exportSelectedPDFs = async () => {
     if (selectedItems.length === 0) return Alert.alert("No Selection", "Please select at least one");
     for (const item of selectedItems) {
@@ -113,7 +117,7 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
     }
   };
 
-  // Smart CSV Export (For Backups)
+  // --- Smart CSV Export ---
   const exportSmartCSV = async (itemsToExport) => {
     try {
       if (itemsToExport.length === 0) return Alert.alert("No Data", "Nothing to export");
@@ -141,9 +145,11 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
 
   const exportAllSmartCSV = () => exportSmartCSV(list);
 
-  // --------------------------------------------------------
-  // 5. IMPORT LOGIC (ব্যাকআপ ফাইল ইমপোর্ট করা)
-  // --------------------------------------------------------
+  // ========================================================
+  // 5. IMPORT & BULK DELETE LOGIC (ইমপোর্ট এবং ডিলিট লজিক)
+  // ========================================================
+  
+  // --- Start Import Process ---
   const handleImportCSV = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true });
@@ -154,7 +160,7 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
 
       const fileContent = await FileSystem.readAsStringAsync(fileUri);
       const lines = fileContent.split("\n");
-      lines.shift(); // Remove header
+      lines.shift(); 
 
       const importedItems = [];
       for (let line of lines) {
@@ -173,6 +179,7 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
     }
   };
 
+  // --- Finalize Import ---
   const importSmartCSV = async (fileUri, mode = "skip") => {
     try {
       const fileContent = await FileSystem.readAsStringAsync(fileUri);
@@ -221,60 +228,43 @@ const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
     }
   };
 
-
-
-const handleBulkDelete = () => {
-  if (selectedItems.length === 0) {
-    return Alert.alert("No Selection", "Please select items first");
-  }
-
-  const count = selectedItems.length;
-
-  Alert.alert(
-    "Delete Selected Items",
-    `${count} items will be permanently deleted. This action cannot be undone.`,
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // ✅ IMPORTANT: take snapshot (fix async bug)
-            const itemsToDelete = [...selectedItems];
-
-            // 1. delete sequentially (safe for AsyncStorage)
-            for (let i = 0; i < itemsToDelete.length; i++) {
-              await deleteQuotation(itemsToDelete[i].id);
+  // --- Bulk Delete Action ---
+  const handleBulkDelete = () => {
+    if (selectedItems.length === 0) {
+      return Alert.alert("No Selection", "Please select items first");
+    }
+    const count = selectedItems.length;
+    Alert.alert(
+      "Delete Selected Items",
+      `${count} items will be permanently deleted.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const itemsToDelete = [...selectedItems];
+              for (let i = 0; i < itemsToDelete.length; i++) {
+                await deleteQuotation(itemsToDelete[i].id);
+              }
+              const data = await getQuotations();
+              setList(data || []);
+              setSelectedItems([]);
+              setIsSelectionMode(false);
+              setCurrentPage(1);
+            } catch (error) {
+              Alert.alert("Error", "Bulk delete failed");
             }
-
-            // 2. reload fresh data
-            const data = await getQuotations();
-            setList(data || []);
-
-            // 3. reset UI state
-            setSelectedItems([]);
-            setIsSelectionMode(false);
-
-            // 4. pagination safety fix
-            setCurrentPage(1);
-
-          } catch (error) {
-            console.log("Bulk Delete Error:", error);
-            Alert.alert("Error", "Bulk delete failed");
           }
         }
-      }
-    ]
-  );
-};
+      ]
+    );
+  };
 
-
-
-
-  // --------------------------------------------------------
+  // ========================================================
   // 6. FILTER & SORT LOGIC (ফিল্টারিং এবং সর্টিং)
-  // --------------------------------------------------------
+  // ========================================================
   const formatDate = (date) => date.toISOString().split('T')[0];
 
   const filteredList = list
@@ -284,7 +274,8 @@ const handleBulkDelete = () => {
       const minMatch = minAmount ? amount >= parseFloat(minAmount) : true;
       const maxMatch = maxAmount ? amount <= parseFloat(maxAmount) : true;
       const itemDate = new Date(item.createdAt);
-      const dateMatch = (!fromDate || itemDate >= new Date(fromDate)) && (!toDate || itemDate <= new Date(toDate + 'T23:59:59'));
+      const dateMatch = (!fromDate || itemDate >= new Date(fromDate)) && 
+                        (!toDate || itemDate <= new Date(toDate + 'T23:59:59'));
       return nameMatch && minMatch && maxMatch && dateMatch;
     })
     .sort((a, b) => {
@@ -301,15 +292,12 @@ const handleBulkDelete = () => {
       }
     });
 
-  // const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
-  // const paginatedList = filteredList.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+  const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-const totalPages = Math.ceil(filteredList.length / itemsPerPage);
-const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  // --------------------------------------------------------
+  // ========================================================
   // 7. RENDER HELPERS (UI এলিমেন্টসমূহ)
-  // --------------------------------------------------------
+  // ========================================================
   const handleDelete = (id) => {
     Alert.alert('Delete', 'Are you sure?', [
       { text: 'Cancel' },
@@ -344,8 +332,10 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-{/* xxxxxxxxxxxxxxxxxx        */}
-{/* 🔍 Search Input & Reset Button (সবসময় দেখা যাবে) */}
+      
+      {/* ----------------------------------------------------
+          A. SEARCH & RESET (সার্চ এবং রিসেট বাটন)
+      ------------------------------------------------------ */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, marginTop: 10 }}>
         <TextInput 
           placeholder="Search client..." 
@@ -353,117 +343,66 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
           onChangeText={(t) => { setSearch(t); setCurrentPage(1); }} 
           style={{ flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 8, backgroundColor: '#fff' }} 
         />
-        
-        {/* 🧹 Reset/Refresh Button */}
         <TouchableOpacity 
           onPress={() => {
-            setSearch('');
-            setFromDate('');
-            setToDate('');
-            setMinAmount('');
-            setMaxAmount('');
-            setSortType('latest');
-            setCurrentPage(1);
+            setSearch(''); setFromDate(''); setToDate(''); setMinAmount(''); 
+            setMaxAmount(''); setSortType('latest'); setCurrentPage(1);
           }}
-          style={{ 
-            marginLeft: 8, 
-            padding: 10, 
-            backgroundColor: '#f8d7da', // হালকা লাল ব্যাকগ্রাউন্ড
-            borderRadius: 8, 
-            borderWidth: 1, 
-            borderColor: '#f5c6cb',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
+          style={{ marginLeft: 8, padding: 10, backgroundColor: '#f8d7da', borderRadius: 8, borderWidth: 1, borderColor: '#f5c6cb', justifyContent: 'center', alignItems: 'center' }}
         >
           <Ionicons name="refresh" size={20} color="#dc3545" /> 
         </TouchableOpacity>
       </View>
       
-      {/* 🔽 Summary & Toggle Button (সবসময় দেখা যাবে) */}
+      {/* ----------------------------------------------------
+          B. SUMMARY, LIMIT & TOGGLE (সামারি ও মেনু কন্ট্রোল)
+      ------------------------------------------------------ */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, marginVertical: 10 }}>
-        {/* বাম পাশে ছোট করে সামারি */}
         <Text style={{ fontWeight: "400", fontSize: 10, color: '#444' }}>
           Showing: {filteredList.length} | Total: {list.length}
         </Text>
-        {/* মাঝখানে ড্রপডাউন স্টাইল সিলেক্টর */}
+
         <View style={{ position: 'relative' }}>
           <TouchableOpacity 
-            onPress={() => setIsShowMenuOpen(!isShowMenuOpen)} // নতুন একটা স্টেট লাগবে
-            style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              backgroundColor: '#f0f0f0', 
-              paddingVertical: 5, 
-              paddingHorizontal: 10, 
-              borderRadius: 15, 
-              borderWidth: 1, 
-              borderColor: '#ddd' 
-            }}
+            onPress={() => setIsShowMenuOpen(!isShowMenuOpen)} 
+            style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 15, borderWidth: 1, borderColor: '#ddd' }}
           >
-            <Text style={{ fontSize: 10, color: '#555', fontWeight: 'bold' }}>
-              Show: {itemsPerPage}
-            </Text>
+            <Text style={{ fontSize: 10, color: '#555', fontWeight: 'bold' }}>Show: {itemsPerPage}</Text>
             <Ionicons name="chevron-down" size={14} color="#555" style={{ marginLeft: 3 }} />
           </TouchableOpacity>
 
-          {/* ড্রপডাউন লিস্ট (যখন ক্লিক করা হবে) */}
           {isShowMenuOpen && (
-            <View style={{ 
-              position: 'absolute', 
-              top: 30, 
-              left: 0, 
-              backgroundColor: '#fff', 
-              borderRadius: 8, 
-              borderWidth: 1, 
-              borderColor: '#ccc', 
-              zIndex: 1000, 
-              elevation: 5,
-              width: 60 
-            }}>
+            <View style={{ position: 'absolute', top: 30, left: 0, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ccc', zIndex: 1000, elevation: 5, width: 60 }}>
               {[10, 20, 50, 100].map((num) => (
                 <TouchableOpacity 
                   key={num} 
-                  onPress={() => {
-                    setItemsPerPage(num);
-                    setIsShowMenuOpen(false);
-                    setCurrentPage(1);
-                  }}
-                  style={{ 
-                    paddingVertical: 8, 
-                    alignItems: 'center', 
-                    borderBottomWidth: num === 100 ? 0 : 1, 
-                    borderBottomColor: '#eee' 
-                  }}
+                  onPress={() => { setItemsPerPage(num); setIsShowMenuOpen(false); setCurrentPage(1); }}
+                  style={{ paddingVertical: 8, alignItems: 'center', borderBottomWidth: num === 100 ? 0 : 1, borderBottomColor: '#eee' }}
                 >
-                  <Text style={{ fontSize: 11, color: itemsPerPage === num ? '#007bff' : '#333', fontWeight: itemsPerPage === num ? 'bold' : 'normal' }}>
-                    {num}
-                  </Text>
+                  <Text style={{ fontSize: 11, color: itemsPerPage === num ? '#007bff' : '#333', fontWeight: itemsPerPage === num ? 'bold' : 'normal' }}>{num}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
 
-        {/* ডান পাশে আপনার সেই আগের টোগল বাটন */}
         <TouchableOpacity 
           onPress={() => setIsFilterVisible(!isFilterVisible)} 
           style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', paddingVertical: 5, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: '#ddd' }}
         >
-          <Text style={{ marginRight: 4, fontSize: 10, color: '#555', fontWeight: 'bold' }}>
-            {isFilterVisible ? "Hide Menu" : "Show Menu"}
-          </Text>
+          <Text style={{ marginRight: 4, fontSize: 10, color: '#555', fontWeight: 'bold' }}>{isFilterVisible ? "Hide Menu" : "Show Menu"}</Text>
           <Ionicons name={isFilterVisible ? "chevron-up" : "chevron-down"} size={14} color="#555" />
         </TouchableOpacity>
       </View>
-{/* yyyyyyyyyyyyyyyyyyy  */}
-{/* 🔴 লাল দাগের অংশ (টোগল হবে) */}
+
+      {/* ----------------------------------------------------
+          C. EXPANDABLE MENUS (সাব-মেনু সেকশন)
+      ------------------------------------------------------ */}
       {isFilterVisible && (
         <View style={{ backgroundColor: '#fff', paddingBottom: 5, borderBottomWidth: 1, borderColor: '#eee' }}>
           
-          {/* 🔘 সাব-মেনু বাটনগুলোর সারি (Row) */}
+          {/* Sub-Menu Icon Row */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', padding: 8, backgroundColor: '#f1f3f5', margin: 5, borderRadius: 10 }}>
-            
             <TouchableOpacity onPress={() => setIsFilterSubOpen(!isFilterSubOpen)} style={{ alignItems: 'center', flex: 1 }}>
               <Ionicons name="funnel-outline" size={18} color={isFilterSubOpen ? "#007bff" : "#495057"} />
               <Text style={{ fontSize: 9, fontWeight: 'bold', color: isFilterSubOpen ? "#007bff" : "#495057", marginTop: 2 }}>FILTERS</Text>
@@ -478,12 +417,9 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
               <Ionicons name="cloud-download-outline" size={18} color={isBackupSubOpen ? "#007bff" : "#495057"} />
               <Text style={{ fontSize: 9, fontWeight: 'bold', color: isBackupSubOpen ? "#007bff" : "#495057", marginTop: 2 }}>BACKUP</Text>
             </TouchableOpacity>
-
           </View>
 
-          {/* 📂 সাব-মেনু কন্টেন্ট এরিয়া */}
-          
-          {/* ১. ফিল্টার কন্টেন্ট */}
+          {/* 1. Filter Sub-Menu Content */}
           {isFilterSubOpen && (
             <View style={{ backgroundColor: '#f8f9fa', marginHorizontal: 8, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#dee2e6', marginBottom: 5 }}>
               <View style={{ flexDirection: 'row', marginBottom: 5 }}>
@@ -504,7 +440,7 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
             </View>
           )}
 
-          {/* ২. সিলেকশন কন্টেন্ট */}
+          {/* 2. Selection Sub-Menu Content */}
           {isSelectionSubOpen && (
             <View style={{ backgroundColor: '#e7f3ff', marginHorizontal: 8, padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#b1d7ff', marginBottom: 5 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -531,7 +467,7 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
             </View>
           )}
 
-          {/* ৩. ব্যাকআপ কন্টেন্ট */}
+          {/* 3. Backup Sub-Menu Content */}
           {isBackupSubOpen && (
             <View style={{ flexDirection: 'row', marginHorizontal: 8, padding: 8, backgroundColor: '#f1f3f5', borderRadius: 8, borderWidth: 1, borderColor: '#ced4da', marginBottom: 5 }}>
               <TouchableOpacity onPress={exportAllSmartCSV} style={{ flex: 1, backgroundColor: "#343a40", padding: 8, borderRadius: 5, marginRight: 5 }}>
@@ -542,30 +478,57 @@ const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, curre
               </TouchableOpacity>
             </View>
           )}
-
         </View>
       )}
-{/* zzzzzzzzzzzzzzzzzzzzzz  */}
-{/* 📜 List Area */}
-<FlatList 
-  data={paginatedList} 
-  keyExtractor={(item) => item.id.toString()} 
-  renderItem={renderItem} 
-  ListEmptyComponent={() => (
-    <View style={{ flex: 1, alignItems: 'center', marginTop: 20 }}>
-       <Text>{loading ? "Loading..." : "No data found"}</Text>
-    </View>
-  )} 
-/>
 
-      {/* 📄 Pagination Footer */}
+      {/* ----------------------------------------------------
+          D. LIST AREA (ডেটা লিস্ট)
+      ------------------------------------------------------ */}
+      <FlatList 
+        data={paginatedList} 
+        keyExtractor={(item) => item.id.toString()} 
+        renderItem={renderItem} 
+        ListEmptyComponent={() => (
+          <View style={{ flex: 1, alignItems: 'center', marginTop: 20 }}>
+              <Text>{loading ? "Loading..." : "No data found"}</Text>
+          </View>
+        )} 
+      />
+
+      {/* ----------------------------------------------------
+          E. PAGINATION FOOTER (পেজিনেশন কন্ট্রোল)
+      ------------------------------------------------------ */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderTopWidth: 1, borderColor: '#eee' }}>
-        <TouchableOpacity disabled={currentPage === 1} onPress={() => setCurrentPage(p => p - 1)} style={{ backgroundColor: currentPage === 1 ? '#ccc' : '#007bff', padding: 8, borderRadius: 5 }}><Text style={{ color: '#fff' }}>Prev</Text></TouchableOpacity>
+        <TouchableOpacity 
+          disabled={currentPage === 1} 
+          onPress={() => setCurrentPage(p => p - 1)} 
+          style={{ backgroundColor: currentPage === 1 ? '#ccc' : '#007bff', padding: 8, borderRadius: 5 }}
+        >
+          <Text style={{ color: '#fff' }}>Prev</Text>
+        </TouchableOpacity>
+        
         <Text>Page {currentPage} of {totalPages || 1}</Text>
-        <TouchableOpacity disabled={currentPage === totalPages || totalPages === 0} onPress={() => setCurrentPage(p => p + 1)} style={{ backgroundColor: (currentPage === totalPages || totalPages === 0) ? '#ccc' : '#007bff', padding: 8, borderRadius: 5 }}><Text style={{ color: '#fff' }}>Next</Text></TouchableOpacity>
+        
+        <TouchableOpacity 
+          disabled={currentPage === totalPages || totalPages === 0} 
+          onPress={() => setCurrentPage(p => p + 1)} 
+          style={{ backgroundColor: (currentPage === totalPages || totalPages === 0) ? '#ccc' : '#007bff', padding: 8, borderRadius: 5 }}
+        >
+          <Text style={{ color: '#fff' }}>Next</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 📥 Import Modal (Conditional UI) */}
+      {/* ----------------------------------------------------
+          F. MODALS & PICKERS (ডেট পিকার এবং ইমপোর্ট মডাল)
+      ------------------------------------------------------ */}
+      {showFromPicker && (
+        <DateTimePicker value={new Date()} mode="date" display="default" onChange={(e, d) => { setShowFromPicker(false); if(d) setFromDate(formatDate(d)); }} />
+      )}
+      {showToPicker && (
+        <DateTimePicker value={new Date()} mode="date" display="default" onChange={(e, d) => { setShowToPicker(false); if(d) setToDate(formatDate(d)); }} />
+      )}
+
+      {/* Import Conflict Modal */}
       {showImportModal && (
         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', padding: 20, borderTopLeftRadius: 15, borderTopRightRadius: 15, elevation: 10 }}>
           <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>{importHasConflict ? "Conflict Detected" : "Ready to Import"}</Text>
