@@ -8,7 +8,7 @@ import { generatePDF } from '../services/pdfService';
 import { saveQuotation, updateQuotation  } from '../services/storageService';
 import * as Sharing from 'expo-sharing';
 
-export default function PreviewScreen({ route }) {
+export default function PreviewScreen({ route, navigation }) {
 
   const data = route.params;
 

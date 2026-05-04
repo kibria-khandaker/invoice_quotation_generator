@@ -13,10 +13,10 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Create" component={CreateQuotationScreen} />
-        <Stack.Screen name="Preview" component={PreviewScreen} />
-        <Stack.Screen name="History" component={HistoryScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Create" component={CreateQuotationScreen} options={{ title: 'Create Quotation' }} />
+        <Stack.Screen name="Preview" component={PreviewScreen} options={{ title: 'Preview Quotation' }} />
+        <Stack.Screen name="History" component={HistoryScreen} options={{ title: 'Quotation History' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
