@@ -25,8 +25,8 @@ export const generateQuotationHTML = (data) => {
   <!-- LEFT -->
   <div style="width: 70%;">
     <h2 style="margin: 0;">${data.companyName}</h2>
-    <p style="margin: 2px 0;">${data.companyAddress}</p>
-    <p style="margin: 2px 0;">${data.companyContact}</p>
+    <p style="margin: 2px 0; white-space: pre-wrap; word-wrap: break-word;">${data.companyAddress}</p>
+    <p style="margin: 2px 0;white-space: pre-wrap; word-wrap: break-word;">${data.companyContact}</p>
   </div>
 
   <!-- RIGHT (LOGO PLACEHOLDER) -->
@@ -133,16 +133,16 @@ export const generateQuotationHTML = (data) => {
 <!-- SIGNATURE -->
 <div style="text-align: right; margin-top: 40px;">
 
-  <p>________________________</p>
-
-  ${data.signatureBase64 ? `
-    <img 
-      src="data:image/jpeg;base64,${data.signatureBase64}" 
+${data.signatureBase64 ? `
+  <img 
+  src="data:image/jpeg;base64,${data.signatureBase64}" 
       style="width:120px;height:60px;object-fit:contain;" 
     />
-  ` : `
+    ` : `
     <p>${data.signature}</p>
-  `}
+    `}
+    <p style="margin-top: -10px;">________________________</p>
+    <p style="margin-top: -10px;">Authorized Signature</p>
 
 </div>
 

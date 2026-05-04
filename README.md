@@ -3,6 +3,7 @@ project and folders details
 ### professional invoice numbering system
 🧾 Smart Sequential Invoice Number Generator (Date-based + Daily reset)
 
+invoice_quotation_generator
 
 Format (Perfect):
 150426Q1001

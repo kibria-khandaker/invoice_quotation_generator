@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "invoice_quotation_generator",
-    "slug": "invoice_quotation_generator",
+    "name": "Invoice & Quotation Generator",
+    "slug": "invoice-quotation-generator",
     "version": "1.0.0",
+    "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -20,13 +20,17 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.qakibria.invoicequotationgenerator"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "@react-native-community/datetimepicker"
-    ]
+    "owner": "qa.kibria",
+    "extra": {
+      "eas": {
+        "projectId": "7a711a59-b81e-4dc0-af19-f1c255443ac1"
+      }
+    }
   }
 }

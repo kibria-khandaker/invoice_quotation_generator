@@ -218,9 +218,7 @@ const handleSaveQuotation = async () => {
 </View>
 
 {/* SIGNATURE */}
-<View style={{ alignItems: 'flex-end', marginTop: 30 }}>
-  <Text>________________________</Text>
-  
+<View style={{ alignItems: 'flex-end', marginTop: 30 }}>  
   {data.signatureImage ? (
       <Image
         source={{ uri: data.signatureImage }}
@@ -230,6 +228,9 @@ const handleSaveQuotation = async () => {
     ) : (
       <Text>{data.signature}</Text>
   )}
+  <Text  style={{ alignItems: 'flex-end', marginTop:'-10' }}>________________________</Text>
+  <Text>Authorized Signature</Text>
+
 </View>
 {/* 10 10 10  */}
 
