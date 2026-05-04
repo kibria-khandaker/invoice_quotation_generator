@@ -180,7 +180,7 @@ Backup/import features:
 ## 📁 Project Structure
 
 ```text
-Full_Project/
+Full_Project_Main_Folder/
 │
 ├── App.js
 ├── index.js
@@ -433,7 +433,7 @@ logic:
 
 ```bash
 git clone <your-repository-url>
-cd Full_Project
+cd Full_Project_Main_Folder
 ```
 
 ---
