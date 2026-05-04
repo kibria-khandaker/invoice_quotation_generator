@@ -409,6 +409,7 @@ DDMMYYQ1001
 🧾 Smart Sequential Invoice Number Generator (Date-based + Daily reset)
 Format (Perfect): 
 
+```text
 DDMMYYQ1001: 150426Q1001
 
 150426Q1001
@@ -422,7 +423,7 @@ DDMMYYQ1001: 150426Q1001
 logic:
 - Today date
 - Daily reset logic
-
+```
 
 ---
 
