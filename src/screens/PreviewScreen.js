@@ -1,263 +1,649 @@
-// src/screens/PreviewScreen.js:
+// ======================================================
+// FILE: src/screens/PreviewScreen.js
+// PURPOSE:
+// Preview quotation before saving/updating/generating PDF
+// NOTE:
+// ✔ Save / Update logic preserved
+// ✔ Generate PDF logic preserved
+// ✔ Styles moved to PreviewScreenStyle.js
+// ✔ Services naming changed to Items
+// ✔ No blank reserved rows in item table
+// ✔ Logo border removed
+// ✔ Quotation info stacked to avoid text breaking
+// ✔ Mode-based title/buttons supported
+// ======================================================
 
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  Alert,
+  Platform,
+  ToastAndroid,
+  TouchableOpacity,
+  StatusBar,
+} from 'react-native';
 
-
-import { View, Text, Button, ScrollView, Image, Alert, Platform, ToastAndroid } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
 import { generatePDF } from '../services/pdfService';
-import { saveQuotation, updateQuotation  } from '../services/storageService';
+import { saveQuotation, updateQuotation } from '../services/storageService';
 import * as Sharing from 'expo-sharing';
 
-export default function PreviewScreen({ route, navigation }) {
+import styles, { BRAND_COLOR } from './PreviewScreenStyle';
 
-  const data = route.params;
+const safeText = (value, fallback = '') => {
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+};
 
-  const subtotal = data.subtotal;
-  const grandTotal = data.grandTotal;
+const parseNumber = (value) => {
+  const number = parseFloat(value);
+  return Number.isNaN(number) ? 0 : number;
+};
 
-  const handleGeneratePDF = async () => {
-    const uri = await generatePDF(data);
+const formatMoney = (value) => {
+  const number = parseNumber(value);
 
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri);
-    }
-  };
-
-const showMessage = (msg) => {
-  if (Platform.OS === 'android') {
-    ToastAndroid.show(msg, ToastAndroid.SHORT);
-  } else {
-    Alert.alert(msg);
+  try {
+    return number.toLocaleString('en-US', {
+      maximumFractionDigits: 2,
+    });
+  } catch {
+    return String(number);
   }
 };
 
+const extractEmailPhoneFromContact = (contact = '') => {
+  const emailMatch = safeText(contact).match(/Email:\s*([^\n]+)/i);
+  const phoneMatch = safeText(contact).match(/Phone:\s*([^\n]+)/i);
 
-const handleSaveQuotation = async () => {
-
-  const performSave = async () => {
-    let success = false;
-
-    if (data.id) {
-      success = await updateQuotation(data);
-    } else {
-      const newData = {
-        ...data,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-
-      success = await saveQuotation(newData);
-    }
-
-    if (success) {
-      showMessage(data.id ? 'Quotation updated!' : 'Quotation saved!');
-      
-      // 👉 redirect to History
-      navigation.navigate('History');
-    } else {
-      showMessage('Something went wrong!');
-    }
+  return {
+    email: emailMatch?.[1]?.trim() || '',
+    phone: phoneMatch?.[1]?.trim() || '',
   };
-
-  // 👉 confirm only for update
-  if (data.id) {
-    Alert.alert(
-      'Update Quotation',
-      'Are you sure you want to update this quotation?',
-      [
-        { text: 'Cancel' },
-        { text: 'Update', onPress: performSave }
-      ]
-    );
-  } else {
-    performSave();
-  }
 };
 
+const getItemAmount = (item) => {
+  return parseNumber(item?.quantity) * parseNumber(item?.unitPrice);
+};
+
+const isBlankItem = (item) => {
+  const name = safeText(item?.name).trim();
+  const description = safeText(item?.description).trim();
+  const quantity = safeText(item?.quantity).trim();
+  const unitPrice = safeText(item?.unitPrice).trim();
+
+  return !name && !description && !unitPrice && (!quantity || quantity === '1');
+};
+
+const getDisplayRows = (services = []) => {
+  const safeServices = Array.isArray(services) ? services : [];
+  return safeServices.filter((item) => !isBlankItem(item));
+};
+
+function InfoLine({ icon, label, value, strong }) {
+  if (!value) return null;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={{ padding: 15 }} contentContainerStyle={{ paddingBottom: 50 }}>
-{/* 1111111111 */}
-{/* HEADER */}
-<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <View style={styles.infoLine}>
+      {icon ? (
+        <Ionicons
+          name={icon}
+          size={12}
+          color="#4b5563"
+          style={styles.infoIcon}
+        />
+      ) : null}
 
-  {/* LEFT - COMPANY INFO */}
-  <View style={{ flex: 1 }}>
-    <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
-      {data.companyName}
-    </Text>
-    <Text>{data.companyAddress}</Text>
-    <Text>{data.companyContact}</Text>
-  </View>
+      {label ? <Text style={styles.infoLabel}>{label}: </Text> : null}
 
-  {/* RIGHT - LOGO */}
-{data.logo ? (
-  <Image
-    source={{ uri: data.logo }}
-    style={{
-      width: 80,
-      height: 80
-    }}
-    resizeMode="contain"
-  />
-) : (
-  <View style={{
-    width: 80,
-    height: 80,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center'
-  }}>
-    <Text style={{ fontSize: 10 }}>Logo</Text>
-  </View>
-)}
-
-</View>
-{/* 22222222222 */}
-{/* 333333333333 */}
-{/* BILL TO + QUOTATION INFO */}
-<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
-
-  {/* LEFT */}
-  <View style={{ width: '48%' }}>
-    <Text style={{ fontWeight: 'bold' }}>Bill To:</Text>
-    <Text>{data.clientName}</Text>
-    <Text>{data.clientCompany}</Text>
-    <Text>{data.clientAddress}</Text>
-  </View>
-
-  {/* RIGHT */}
-  <View style={{ width: '48%', alignItems: 'flex-end' }}>
-    <Text style={{ fontWeight: 'bold' }}>Quotation Info:</Text>
-    <Text>Quotation No: {data.quotationNumber}</Text>
-    <Text>Date: {data.date}</Text>
-    <Text>Validity: {data.validity}</Text>
-  </View>
-
-</View>
-
-{/* TITLE CENTER */}
-<Text style={{ textAlign: 'center', marginVertical: 15, fontWeight: 'bold' }}>
-  QUOTATION
-</Text>
-{/* 444444444444 */}
-       {/* 555555555 */}
-<Text style={{ marginTop: 15, fontWeight: 'bold' }}>Services</Text>
-
-<View style={{ borderWidth: 1, borderColor: '#ccc' }}>
-
-  {/* HEADER */}
-  <View style={{ flexDirection: 'row', backgroundColor: '#f2f2f2' }}>
-    <Text style={{ flex: 1 }}>#</Text>
-    <Text style={{ flex: 2 }}>Service</Text>
-    <Text style={{ flex: 1 }}>Qty</Text>
-    <Text style={{ flex: 1 }}>Price</Text>
-  </View>
-
-  {/* ROWS */}
-  {data.services.map((item, index) => (
-    <View key={item.id} style={{ flexDirection: 'row', borderTopWidth: 1 }}>
-
-      <Text style={{ flex: 1 }}>{index + 1}</Text>
-      <Text style={{ flex: 2 }}>{item.name}</Text>
-      <Text style={{ flex: 1 }}>{item.quantity}</Text>
-      <Text style={{ flex: 1 }}>{item.unitPrice}</Text>
-
+      <Text style={[styles.infoValue, strong && styles.infoValueStrong]}>
+        {value}
+      </Text>
     </View>
-  ))}
+  );
+}
 
-</View>
-{/* 6666666666666 */}
-{/* 7777777 */}
-<View style={{ marginTop: 20, alignSelf: 'flex-end', width: '60%' }}>
+function QuoteInfoItem({ label, value }) {
+  if (!value) return null;
 
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-    <Text>Subtotal:</Text>
-    <Text>{subtotal}</Text>
-  </View>
+  return (
+    <View style={styles.quoteInfoItem}>
+      <Text style={styles.quoteInfoLabel}>{label}</Text>
+      <Text style={styles.quoteInfoValue}>{value}</Text>
+    </View>
+  );
+}
 
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-    <Text>Discount:</Text>
-    <Text>{data.discount}</Text>
-  </View>
+function SectionTitle({ title }) {
+  return (
+    <View style={styles.centerTitleRow}>
+      <View style={styles.centerTitleLine} />
+      <Text style={styles.centerTitle}>{title}</Text>
+      <View style={styles.centerTitleLine} />
+    </View>
+  );
+}
 
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-    <Text>Tax:</Text>
-    <Text>{data.tax}</Text>
-  </View>
+function ActionButton({ title, icon, onPress, outline }) {
+  if (outline) {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.86}
+        style={styles.outlineButton}
+        onPress={onPress}
+      >
+        <Ionicons name={icon} size={16} color={BRAND_COLOR} />
+        <Text
+          style={styles.outlineButtonText}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.75}
+        >
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
 
-  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, borderTopWidth: 1 }}>
-    <Text style={{ fontWeight: 'bold' }}>Total:</Text>
-    <Text style={{ fontWeight: 'bold' }}>{grandTotal}</Text>
-  </View>
+  return (
+    <TouchableOpacity
+      activeOpacity={0.88}
+      style={styles.primaryButtonWrap}
+      onPress={onPress}
+    >
+      <LinearGradient
+        colors={[BRAND_COLOR, '#ff6b95']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.primaryButton}
+      >
+        <Ionicons name={icon} size={16} color="#ffffff" />
+        <Text
+          style={styles.primaryButtonText}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+        >
+          {title}
+        </Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
 
-</View>
-{/* 88888888888 */}
-{/* 999999 */}
-{/* PAYMENT */}
-<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+export default function PreviewScreen({ route, navigation }) {
+  const params = route.params || {};
 
-  <View style={{ width: '48%' }}>
-    <Text style={{ fontWeight: 'bold' }}>Payment Terms</Text>
-    <Text>{data.paymentTerms}</Text>
-  </View>
+  // ======================================================
+  // SCREEN MODE SUPPORT
+  // Supported flows:
+  // 1. Create -> Preview: normal preview
+  // 2. History -> View: historyView
+  // 3. Edit -> Preview: editPreview / saved data with id
+  //
+  // Backward compatible:
+  // Old navigation.navigate('Preview', item) still works.
+  // New navigation can use:
+  // navigation.navigate('Preview', { quotationData: item, mode: 'historyView' })
+  // ======================================================
+  const screenMode = params.mode || params.screenMode || 'preview';
 
-  <View style={{ width: '48%' }}>
-    <Text style={{ fontWeight: 'bold' }}>Payment Method</Text>
-    <Text>{data.paymentMethod}</Text>
-  </View>
+  const data = params.quotationData || params.data || params;
 
-</View>
+  const isHistoryViewMode = screenMode === 'historyView';
 
-{/* MOBILE PAYMENT */}
-{/* MOBILE PAYMENT */}
-<View style={{ marginTop: 10 }}>
-  <Text>{data.mobilePaymentInfo}</Text>
-</View>
+  const headerTitle = isHistoryViewMode
+    ? 'View Quotation'
+    : 'Preview Quotation';
 
-{/* SIGNATURE */}
-<View style={{ alignItems: 'flex-end', marginTop: 30 }}>  
-  {data.signatureImage ? (
-      <Image
-        source={{ uri: data.signatureImage }}
-        style={{ width: 120, height: 60 }}
-        resizeMode="contain"
-      />
-    ) : (
-      <Text>{data.signature}</Text>
-  )}
-  <Text  style={{ alignItems: 'flex-end', marginTop:'-10' }}>________________________</Text>
-  <Text>Authorized Signature</Text>
+  const headerRightIcon = isHistoryViewMode
+    ? 'time-outline'
+    : 'document-text-outline';
 
-</View>
-{/* 10 10 10  */}
+  const primaryActionTitle = isHistoryViewMode
+    ? 'Go to Edit'
+    : data.id
+      ? 'Update Quotation'
+      : 'Save Quotation';
 
-{/* 11 11 11 11 */}
-        {/* FOOTER */}
+  const primaryActionIcon = isHistoryViewMode
+    ? 'create-outline'
+    : 'save-outline';
 
-<View style={{ marginTop: 30, borderTopWidth: 1, paddingTop: 10 }}>
+  const parsedCompanyContact = extractEmailPhoneFromContact(data.companyContact);
 
-  <Text style={{ fontWeight: 'bold' }}>Notes</Text>
-  <Text>{data.notes}</Text>
+  const companyEmail = data.companyEmail || parsedCompanyContact.email;
+  const companyPhone = data.companyPhone || parsedCompanyContact.phone;
 
-  <Text style={{ marginTop: 10, fontSize: 10, color: '#666' }}>
-    * This is a system generated quotation. Terms may apply.
-  </Text>
+  const subtotal = parseNumber(data.subtotal);
+  const discount = parseNumber(data.discount);
 
-    <Text  style={{fontSize: 10, color: '#666', textAlign: 'center' }}> 
-      all support By netkib.com & kibria.net
-    </Text>
+  const taxPercentage =
+    data.taxPercentage !== undefined && data.taxPercentage !== null
+      ? parseNumber(data.taxPercentage)
+      : null;
 
-</View>
-{/* 12 12 12 */}
-        {/* <Button title="Save Quotation" onPress={handleSaveQuotation} /> */}
-        <Button title={data.id ? "Update Quotation" : "Save Quotation"} onPress={handleSaveQuotation} />
-        <View style={{ height: 10 }} />
-        <Button title="Generate PDF" onPress={handleGeneratePDF} />
+  const taxAmount =
+    data.taxAmount !== undefined && data.taxAmount !== null
+      ? parseNumber(data.taxAmount)
+      : parseNumber(data.tax);
 
-      </ScrollView>
+  const grandTotal = parseNumber(data.grandTotal);
+
+  const displayRows = getDisplayRows(data.services);
+
+  const showMessage = (msg) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(msg, ToastAndroid.SHORT);
+    } else {
+      Alert.alert(msg);
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    try {
+      const uri = await generatePDF(data);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      }
+    } catch (error) {
+      showMessage('PDF generation failed!');
+    }
+  };
+
+  const handleSaveQuotation = async () => {
+    const performSave = async () => {
+      let success = false;
+
+      if (data.id) {
+        success = await updateQuotation(data);
+      } else {
+        const newData = {
+          ...data,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+        };
+
+        success = await saveQuotation(newData);
+      }
+
+      if (success) {
+        showMessage(data.id ? 'Quotation updated!' : 'Quotation saved!');
+        navigation.navigate('History');
+      } else {
+        showMessage('Something went wrong!');
+      }
+    };
+
+    if (data.id) {
+      Alert.alert(
+        'Update Quotation',
+        'Are you sure you want to update this quotation?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Update', onPress: performSave },
+        ]
+      );
+    } else {
+      performSave();
+    }
+  };
+
+  // ======================================================
+  // HEADER RIGHT ACTION
+  // History view mode: go back to History
+  // Other preview modes: generate/share PDF
+  // ======================================================
+  const handleHeaderRightPress = () => {
+    if (isHistoryViewMode) {
+      navigation.navigate('History');
+      return;
+    }
+
+    handleGeneratePDF();
+  };
+
+  // ======================================================
+  // PRIMARY BOTTOM ACTION
+  // History view mode: go to edit screen
+  // Other preview modes: save/update quotation
+  // ======================================================
+  const handlePrimaryAction = () => {
+    if (isHistoryViewMode) {
+      navigation.navigate('Create', {
+        editData: data,
+        mode: 'historyEdit',
+      });
+      return;
+    }
+
+    handleSaveQuotation();
+  };
+
+  return (
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right', 'bottom']}
+    >
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLOR} />
+
+      <View style={styles.screen}>
+        <LinearGradient
+          colors={[BRAND_COLOR, '#ff6b95']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.headerIconButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={22} color="#ffffff" />
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>{headerTitle}</Text>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.headerIconButton}
+            onPress={handleHeaderRightPress}
+          >
+            <Ionicons name={headerRightIcon} size={21} color="#ffffff" />
+          </TouchableOpacity>
+        </LinearGradient>
+
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.paper}>
+            {/* Company Header */}
+            <View style={styles.companyHeader}>
+              <View style={styles.companyLeft}>
+                <Text style={styles.companyName}>
+                  {safeText(data.companyName, 'Company Name')}
+                </Text>
+
+                <Text style={styles.companySubTitle}>Item Service</Text>
+
+                <InfoLine
+                  icon="location-outline"
+                  value={safeText(data.companyAddress)}
+                />
+                <InfoLine icon="mail-outline" value={companyEmail} />
+                <InfoLine icon="call-outline" value={companyPhone} />
+              </View>
+
+              <View style={styles.logoBox}>
+                {data.logo ? (
+                  <Image
+                    source={{ uri: data.logo }}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="business-outline"
+                      size={28}
+                      color={BRAND_COLOR}
+                    />
+                    <Text style={styles.logoPlaceholder}>Logo</Text>
+                  </>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.redDivider} />
+
+            {/* Bill To + Quotation Info */}
+            <View style={styles.billQuoteRow}>
+              <View style={styles.billBox}>
+                <Text style={styles.blockTitle}>Bill To :</Text>
+
+                <InfoLine label="Name" value={safeText(data.clientName)} strong />
+                <InfoLine label="Company" value={safeText(data.clientCompany)} />
+                <InfoLine label="Email" value={safeText(data.clientEmail)} />
+                <InfoLine label="Address" value={safeText(data.clientAddress)} />
+                <InfoLine label="Contact" value={safeText(data.clientPhone)} />
+              </View>
+
+              <View style={styles.quoteInfoBox}>
+                <QuoteInfoItem
+                  label="Quotation No"
+                  value={safeText(data.quotationNumber)}
+                />
+
+                <QuoteInfoItem
+                  label="Quotation Date"
+                  value={safeText(data.date)}
+                />
+
+                {data.validity ? (
+                  <QuoteInfoItem
+                    label="Validity"
+                    value={`${safeText(data.validity)}${
+                      String(data.validity).includes('day') ? '' : ' days'
+                    }`}
+                  />
+                ) : null}
+              </View>
+            </View>
+
+            <SectionTitle title="Item Details" />
+
+            {/* Items Table */}
+            <View style={styles.itemTable}>
+              <View style={styles.itemTableHeader}>
+                <Text style={[styles.th, styles.colNo]}>#</Text>
+                <Text style={[styles.th, styles.colDescription]}>
+                  Description
+                </Text>
+                <Text style={[styles.th, styles.colQty]}>Qty</Text>
+                <Text style={[styles.th, styles.colRate]}>Rate</Text>
+                <Text style={[styles.th, styles.colAmount]}>Amount</Text>
+              </View>
+
+              {displayRows.length === 0 ? (
+                <View style={styles.noItemRow}>
+                  <Text style={styles.noItemText}>No item added</Text>
+                </View>
+              ) : (
+                displayRows.map((item, index) => {
+                  const amount = getItemAmount(item);
+
+                  return (
+                    <View
+                      key={item.id || `row-${index}`}
+                      style={styles.itemTableRow}
+                    >
+                      <Text style={[styles.td, styles.colNo]}>{index + 1}</Text>
+
+                      <View
+                        style={[
+                          styles.itemDescriptionCell,
+                          styles.colDescription,
+                        ]}
+                      >
+                        <Text style={styles.itemNameText} numberOfLines={1}>
+                          {safeText(item.name)}
+                        </Text>
+
+                        {item.description ? (
+                          <Text style={styles.itemDescText} numberOfLines={2}>
+                            {item.description}
+                          </Text>
+                        ) : null}
+                      </View>
+
+                      <Text style={[styles.td, styles.colQty]}>
+                        {safeText(item.quantity)}
+                      </Text>
+
+                      <Text style={[styles.td, styles.colRate]}>
+                        {formatMoney(item.unitPrice)}
+                      </Text>
+
+                      <Text style={[styles.td, styles.colAmount]}>
+                        {formatMoney(amount)}
+                      </Text>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+
+            {/* Summary */}
+            <View style={styles.summaryBox}>
+              <View style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryValue}>{formatMoney(subtotal)}</Text>
+              </View>
+
+              <View style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>Discount</Text>
+                <Text style={styles.summaryValue}>{formatMoney(discount)}</Text>
+              </View>
+
+              <View style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>
+                  {taxPercentage !== null ? `Tax (${taxPercentage}%)` : 'Tax'}
+                </Text>
+                <Text style={styles.summaryValue}>{formatMoney(taxAmount)}</Text>
+              </View>
+
+              <View style={styles.netAmountLine}>
+                <Text style={styles.netAmountLabel}>Net Amount</Text>
+                <Text style={styles.netAmountValue}>
+                  {formatMoney(grandTotal)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Payment Blocks */}
+            <View style={styles.paymentRow}>
+              <View style={styles.paymentBox}>
+                <View style={styles.paymentTitleRow}>
+                  <Ionicons
+                    name="receipt-outline"
+                    size={15}
+                    color={BRAND_COLOR}
+                  />
+                  <Text style={styles.paymentTitle}>Payment Terms</Text>
+                </View>
+
+                <Text style={styles.paymentText}>
+                  {safeText(data.paymentTerms, 'No payment terms added.')}
+                </Text>
+              </View>
+
+              <View style={styles.paymentBox}>
+                <View style={styles.paymentTitleRow}>
+                  <Ionicons
+                    name="business-outline"
+                    size={15}
+                    color={BRAND_COLOR}
+                  />
+                  <Text style={styles.paymentTitle}>Payment Method</Text>
+                </View>
+
+                <Text style={styles.paymentText}>
+                  {safeText(data.paymentMethod, 'No payment method added.')}
+                </Text>
+              </View>
+            </View>
+
+            {data.mobilePaymentInfo ? (
+              <View style={styles.mobilePaymentBox}>
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={14}
+                  color={BRAND_COLOR}
+                />
+                <Text style={styles.mobilePaymentText}>
+                  {safeText(data.mobilePaymentInfo)}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Signature */}
+            <View style={styles.signatureArea}>
+              {data.signatureImage ? (
+                <Image
+                  source={{ uri: data.signatureImage }}
+                  style={styles.signatureImage}
+                  resizeMode="contain"
+                />
+              ) : data.signature ? (
+                <Text style={styles.signatureText}>{data.signature}</Text>
+              ) : (
+                <View style={styles.signatureBlank} />
+              )}
+
+              <View style={styles.signatureLine} />
+              <Text style={styles.signatureLabel}>Authorized Signature</Text>
+              <Text style={styles.signatureCompany}>
+                {safeText(data.companyName)}
+              </Text>
+            </View>
+
+            {/* Notes */}
+            <View style={styles.notesBox}>
+              <View style={styles.thanksRow}>
+                <Ionicons name="heart" size={13} color={BRAND_COLOR} />
+                <Text style={styles.thanksText}>THANKS FOR YOUR INQUIRY!</Text>
+              </View>
+
+              <Text style={styles.notesText}>
+                <Text style={styles.notesBold}>Notes: </Text>
+                {safeText(data.notes, 'No additional notes added.')}
+              </Text>
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={styles.footerHelp}>
+                If you have any questions about this Quotation, please contact
+                with us
+              </Text>
+
+              <View style={styles.footerContactRow}>
+                <Text style={styles.footerContact}>{companyPhone}</Text>
+                <Text style={styles.footerDivider}>|</Text>
+                <Text style={styles.footerContact}>{companyEmail}</Text>
+              </View>
+
+              <Text style={styles.footerSupport}>
+                Development & maintenance support by netkib.com & kibria.net
+              </Text>
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actionRow}>
+            <ActionButton
+              title={primaryActionTitle}
+              icon={primaryActionIcon}
+              onPress={handlePrimaryAction}
+            />
+
+            <ActionButton
+              title="Generate PDF"
+              icon="document-text-outline"
+              outline
+              onPress={handleGeneratePDF}
+            />
+          </View>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -9,7 +9,6 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const BRAND_COLOR = '#fd4475';
-const EDIT_COLOR = '#f97316';
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -86,96 +85,7 @@ scrollContent: {
   paddingHorizontal: 13,
   paddingBottom: 90,
 },
-  editModeTopCard: {
-    backgroundColor: '#fff7ed',
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#fed7aa',
-    flexDirection: 'row',
-    alignItems: 'center',
 
-    elevation: 4,
-    shadowColor: '#111827',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-  },
-
-  editModeIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
-    backgroundColor: '#ffedd5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-
-  editModeContent: {
-    flex: 1,
-    paddingRight: 8,
-  },
-
-  editModeTitle: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '900',
-    color: '#7c2d12',
-  },
-
-  editModeSubtitle: {
-    marginTop: 2,
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: '#9a3412',
-    fontWeight: '600',
-  },
-
-  editModeBadge: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffedd5',
-    borderWidth: 1,
-    borderColor: '#fed7aa',
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-  },
-
-  editModeBadgeText: {
-    marginLeft: 5,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '900',
-    color: EDIT_COLOR,
-  },
-
-  cancelEditButton: {
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: '#ffedd5',
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#fed7aa',
-  },
-
-  cancelEditButtonText: {
-    marginLeft: 3,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '900',
-    color: EDIT_COLOR,
-  },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 20,
@@ -449,12 +359,12 @@ addServiceBtnText: {
     padding: 12,
   },
 
-pricingRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  minHeight: 48,
-},
+  pricingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 38,
+  },
 
   pricingLabel: {
     fontSize: 12.5,
@@ -468,22 +378,19 @@ pricingRow: {
     fontWeight: '900',
   },
 
-priceInput: {
-  minWidth: 96,
-  height: 42,
-  borderWidth: 1,
-  borderColor: '#ffd4df',
-  borderRadius: 12,
-  paddingHorizontal: 10,
-  paddingVertical: 0,
-  textAlign: 'right',
-  textAlignVertical: 'center',
-  color: '#0b1531',
-  fontSize: 14,
-  lineHeight: 18,
-  fontWeight: '800',
-  backgroundColor: '#ffffff',
-},
+  priceInput: {
+    minWidth: 86,
+    height: 34,
+    borderWidth: 1,
+    borderColor: '#ffd4df',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    textAlign: 'right',
+    color: '#0b1531',
+    fontSize: 12.5,
+    fontWeight: '800',
+    backgroundColor: '#ffffff',
+  },
 
   pricingDivider: {
     height: 1,
@@ -614,197 +521,6 @@ outlineButton: {
     fontSize: 14,
     fontWeight: '900',
   },
-  actionButtonTextCompact: {
-    fontSize: 13,
-    lineHeight: 17,
-    marginLeft: 5,
-  },
-presetFullRow: {
-  alignItems: 'flex-end',
-  marginTop: -4,
-  marginBottom: 10,
-},
-
-serviceCellWrap: {
-  justifyContent: 'center',
-  paddingVertical: 5,
-  paddingHorizontal: 5,
-},
-
-serviceNameInput: {
-  minHeight: 24,
-  color: '#263244',
-  fontSize: 11.5,
-  fontWeight: '800',
-  paddingVertical: 2,
-  paddingHorizontal: 0,
-},
-
-serviceDescriptionInput: {
-  minHeight: 22,
-  color: '#667085',
-  fontSize: 10.5,
-  fontWeight: '500',
-  paddingVertical: 1,
-  paddingHorizontal: 0,
-},
-
-catalogModalOverlay: {
-  flex: 1,
-  backgroundColor: 'rgba(15, 23, 42, 0.45)',
-  justifyContent: 'flex-end',
-},
-
-catalogModalCard: {
-  maxHeight: '78%',
-  backgroundColor: '#fffafb',
-  borderTopLeftRadius: 28,
-  borderTopRightRadius: 28,
-  paddingHorizontal: 16,
-  paddingTop: 16,
-  paddingBottom: 26,
-},
-
-catalogModalHeader: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 14,
-},
-
-catalogModalTitle: {
-  fontSize: 20,
-  lineHeight: 25,
-  fontWeight: '900',
-  color: '#07142f',
-},
-
-catalogModalSubtitle: {
-  marginTop: 3,
-  fontSize: 12.5,
-  lineHeight: 18,
-  color: '#667085',
-  fontWeight: '500',
-},
-
-catalogCloseButton: {
-  marginLeft: 'auto',
-  width: 38,
-  height: 38,
-  borderRadius: 19,
-  backgroundColor: '#ffffff',
-  alignItems: 'center',
-  justifyContent: 'center',
-
-  elevation: 3,
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 3 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-},
-
-catalogCustomButton: {
-  height: 46,
-  borderRadius: 15,
-  backgroundColor: BRAND_COLOR,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: 12,
-},
-
-catalogCustomButtonText: {
-  marginLeft: 7,
-  color: '#ffffff',
-  fontSize: 14,
-  fontWeight: '900',
-},
-
-catalogListContent: {
-  paddingBottom: 8,
-},
-
-catalogOptionCard: {
-  backgroundColor: '#ffffff',
-  borderRadius: 18,
-  padding: 12,
-  marginBottom: 10,
-  borderWidth: 1,
-  borderColor: '#fff0f4',
-  flexDirection: 'row',
-  alignItems: 'center',
-
-  elevation: 3,
-  shadowColor: '#111827',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.05,
-  shadowRadius: 10,
-},
-
-catalogOptionIconBox: {
-  width: 46,
-  height: 46,
-  borderRadius: 15,
-  backgroundColor: '#ffeaf1',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginRight: 10,
-},
-
-catalogOptionInfo: {
-  flex: 1,
-  paddingRight: 8,
-},
-
-catalogOptionTitle: {
-  fontSize: 14,
-  lineHeight: 19,
-  fontWeight: '900',
-  color: '#07142f',
-},
-
-catalogOptionSubtitle: {
-  marginTop: 3,
-  fontSize: 11.5,
-  lineHeight: 16,
-  color: '#667085',
-  fontWeight: '500',
-},
-
-catalogOptionMeta: {
-  marginTop: 4,
-  fontSize: 11.5,
-  lineHeight: 16,
-  color: BRAND_COLOR,
-  fontWeight: '800',
-},
-
-catalogEmptyBox: {
-  backgroundColor: '#ffffff',
-  borderRadius: 22,
-  padding: 24,
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: '#fff0f4',
-},
-
-catalogEmptyTitle: {
-  marginTop: 8,
-  fontSize: 15,
-  fontWeight: '900',
-  color: '#07142f',
-  textAlign: 'center',
-},
-
-catalogEmptyText: {
-  marginTop: 4,
-  fontSize: 12.5,
-  lineHeight: 18,
-  color: '#667085',
-  textAlign: 'center',
-},
-
-
-
 });
 
 export default styles;
