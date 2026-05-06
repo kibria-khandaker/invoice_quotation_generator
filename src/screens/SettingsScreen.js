@@ -64,6 +64,13 @@ const SETTING_ITEMS = [
     icon: 'document-text-outline',
     route: 'NotesSettings',
   },
+  {
+    id: 'drafts',
+    title: 'Quotations Drafts',
+    subtitle: 'This is Drafts to appear on your quotations.',
+    icon: 'create-outline',
+    route: 'DraftQuotation',
+  },
 ];
 
 export default function SettingsScreen({ navigation }) {

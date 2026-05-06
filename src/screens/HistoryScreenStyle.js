@@ -29,14 +29,16 @@ const styles = StyleSheet.create({
   },
 
   iconLeftSpace: {
-    marginLeft: 5,
+    marginLeft: 4,
   },
 
   // ======================================================
-  // TOP HEADER / SEARCH / MENU
+  // TOP HEADER / SEARCH / MENU - COMPACT
   // ======================================================
   topHeaderWrap: {
-    padding: 10,
+    paddingHorizontal: 8,
+    paddingTop: 7,
+    paddingBottom: 5,
     backgroundColor: '#ffffff',
     elevation: 30,
     zIndex: 3000,
@@ -47,23 +49,32 @@ const styles = StyleSheet.create({
 
   searchRow: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 6,
   },
 
   searchInput: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#f3c3d1',
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    minHeight: 38,
     borderRadius: 10,
-    marginRight: 10,
+    marginRight: 8,
     backgroundColor: '#fff7fa',
     color: '#111827',
+    fontSize: 13,
+    lineHeight: 17,
   },
 
   resetButton: {
     backgroundColor: '#fff0f5',
-    padding: 10,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    minHeight: 38,
+    minWidth: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#f3c3d1',
@@ -72,7 +83,7 @@ const styles = StyleSheet.create({
   headerSummaryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 1,
     justifyContent: 'space-between',
     zIndex: 3001,
     elevation: 31,
@@ -80,9 +91,10 @@ const styles = StyleSheet.create({
   },
 
   showingText: {
-    fontSize: 11,
+    fontSize: 10.5,
+    lineHeight: 14,
     color: '#475467',
-    fontWeight: '700',
+    fontWeight: '800',
   },
 
   itemsPerPageWrap: {
@@ -94,27 +106,30 @@ const styles = StyleSheet.create({
   chipButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    minHeight: 30,
     backgroundColor: '#fff0f5',
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: '#f3c3d1',
   },
 
   chipText: {
-    fontSize: 11,
+    fontSize: 10.5,
+    lineHeight: 14,
     color: BRAND_COLOR,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 
   showMenuButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 11,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minHeight: 30,
     backgroundColor: '#fff0f5',
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: BRAND_COLOR,
   },
@@ -124,9 +139,10 @@ const styles = StyleSheet.create({
   },
 
   showMenuText: {
-    fontSize: 11,
+    fontSize: 10.5,
+    lineHeight: 14,
     color: BRAND_COLOR,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 
   showMenuTextActive: {
@@ -135,20 +151,21 @@ const styles = StyleSheet.create({
 
   dropdownList: {
     position: 'absolute',
-    top: 35,
+    top: 32,
     right: 0,
     backgroundColor: '#ffffff',
     borderRadius: 8,
     elevation: 50,
     zIndex: 5000,
-    width: 80,
+    width: 76,
     borderWidth: 1,
     borderColor: '#f3c3d1',
     overflow: 'hidden',
   },
 
   dropdownItem: {
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f3edf0',
     backgroundColor: '#ffffff',
@@ -165,7 +182,8 @@ const styles = StyleSheet.create({
   dropdownText: {
     textAlign: 'center',
     color: '#333333',
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
 
   dropdownTextActive: {
@@ -174,11 +192,11 @@ const styles = StyleSheet.create({
   },
 
   // ======================================================
-  // ADVANCED MENU
+  // ADVANCED MENU - SUPER COMPACT
   // ======================================================
   advancedMenuWrap: {
     backgroundColor: '#ffffff',
-    paddingBottom: 10,
+    paddingBottom: 4,
     elevation: 3,
     zIndex: 1,
     borderBottomWidth: 1,
@@ -187,9 +205,11 @@ const styles = StyleSheet.create({
 
   menuTabsWrap: {
     flexDirection: 'row',
-    margin: 8,
+    marginHorizontal: 8,
+    marginTop: 6,
+    marginBottom: 5,
     backgroundColor: '#fff7fa',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#f6d1dc',
     overflow: 'hidden',
@@ -197,9 +217,12 @@ const styles = StyleSheet.create({
 
   menuTab: {
     flex: 1,
-    padding: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#fff7fa',
+    minHeight: 50,
   },
 
   menuTabWithBorder: {
@@ -212,7 +235,9 @@ const styles = StyleSheet.create({
   },
 
   menuTabText: {
-    fontSize: 11,
+    marginTop: 1,
+    fontSize: 10.5,
+    lineHeight: 13,
     fontWeight: '900',
     color: '#667085',
   },
@@ -222,16 +247,16 @@ const styles = StyleSheet.create({
   },
 
   // ======================================================
-  // FILTER SUB-MENU
+  // FILTER SUB-MENU - COMPACT
   // ======================================================
   subMenuBox: {
     marginHorizontal: 8,
-    padding: 8,
+    padding: 6,
     backgroundColor: '#fff7fa',
-    borderRadius: 10,
+    borderRadius: 9,
     borderWidth: 1,
     borderColor: '#f6d1dc',
-    marginBottom: 5,
+    marginBottom: 4,
   },
 
   filterInputRow: {
@@ -244,28 +269,36 @@ const styles = StyleSheet.create({
     flex: 1,
     borderWidth: 1,
     borderColor: '#f3c3d1',
-    padding: 7,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    minHeight: 34,
     borderRadius: 7,
     backgroundColor: '#ffffff',
+    fontSize: 12,
+    lineHeight: 16,
   },
 
   dateRow: {
     flexDirection: 'row',
     gap: 5,
-    marginBottom: 8,
+    marginBottom: 6,
   },
 
   dateButton: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#f3c3d1',
-    padding: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    minHeight: 34,
     borderRadius: 7,
     backgroundColor: '#ffffff',
+    justifyContent: 'center',
   },
 
   dateButtonText: {
-    fontSize: 11,
+    fontSize: 11.5,
+    lineHeight: 15,
     color: '#111827',
   },
 
@@ -275,12 +308,14 @@ const styles = StyleSheet.create({
 
   sortButton: {
     backgroundColor: '#ffffff',
-    paddingVertical: 7,
-    paddingHorizontal: 9,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderRadius: 7,
-    marginRight: 6,
+    marginRight: 5,
     borderWidth: 1,
     borderColor: '#f3c3d1',
+    minHeight: 30,
+    justifyContent: 'center',
   },
 
   sortButtonActive: {
@@ -290,8 +325,9 @@ const styles = StyleSheet.create({
 
   sortButtonText: {
     color: '#667085',
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 9.5,
+    lineHeight: 12,
+    fontWeight: '900',
   },
 
   sortButtonTextActive: {
@@ -299,16 +335,18 @@ const styles = StyleSheet.create({
   },
 
   // ======================================================
-  // SELECTION SUB-MENU
+  // SELECTION SUB-MENU - COMPACT
   // ======================================================
   selectionToggleButton: {
     backgroundColor: BRAND_COLOR,
     paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingVertical: 6,
     borderRadius: 7,
     marginRight: 8,
     zIndex: 1,
     alignItems: 'center',
+    minHeight: 32,
+    justifyContent: 'center',
   },
 
   selectionToggleButtonActive: {
@@ -317,15 +355,16 @@ const styles = StyleSheet.create({
 
   selectionToggleText: {
     color: '#ffffff',
-    fontSize: 11,
+    fontSize: 10.5,
+    lineHeight: 14,
     fontWeight: '900',
   },
 
   selectionScroll: {
-    marginTop: 8,
+    marginTop: 5,
     borderTopWidth: 1,
     borderColor: '#f6d1dc',
-    paddingTop: 8,
+    paddingTop: 5,
   },
 
   selectionRow: {
@@ -335,32 +374,37 @@ const styles = StyleSheet.create({
 
   selectedBadge: {
     backgroundColor: '#ffffff',
-    paddingHorizontal: 7,
-    paddingVertical: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     borderRadius: 7,
     borderWidth: 1,
     borderColor: BRAND_COLOR,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 6,
+    minHeight: 28,
   },
 
   selectedBadgeIcon: {
-    marginRight: 4,
+    marginRight: 3,
   },
 
   selectedBadgeText: {
     color: BRAND_COLOR,
-    fontSize: 10,
+    fontSize: 9.5,
+    lineHeight: 12,
     fontWeight: '900',
   },
 
   outlineActionButton: {
-    padding: 7,
-    marginRight: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 7,
+    marginRight: 5,
     borderRadius: 7,
     borderWidth: 1,
     backgroundColor: '#ffffff',
+    minHeight: 30,
+    justifyContent: 'center',
   },
 
   selectCurrentButton: {
@@ -369,7 +413,8 @@ const styles = StyleSheet.create({
 
   selectCurrentText: {
     color: '#17a2b8',
-    fontSize: 10.5,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: '900',
   },
 
@@ -379,31 +424,37 @@ const styles = StyleSheet.create({
 
   selectHistoryText: {
     color: '#6f42c1',
-    fontSize: 10.5,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: '900',
   },
 
   clearButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    marginLeft: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    marginLeft: 4,
     borderWidth: 1,
     borderColor: '#dc3545',
     borderRadius: 7,
     backgroundColor: '#ffffff',
+    minHeight: 29,
+    justifyContent: 'center',
   },
 
   clearButtonText: {
     color: '#dc3545',
-    fontSize: 10.5,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: '900',
   },
 
   solidActionButton: {
-    paddingVertical: 7,
-    paddingHorizontal: 9,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     borderRadius: 7,
-    marginRight: 8,
+    marginRight: 6,
+    minHeight: 32,
+    justifyContent: 'center',
   },
 
   exportPdfButton: {
@@ -422,7 +473,8 @@ const styles = StyleSheet.create({
   solidActionText: {
     color: '#ffffff',
     fontSize: 10,
-    fontWeight: '800',
+    lineHeight: 13,
+    fontWeight: '900',
   },
 
   solidActionDangerText: {
@@ -430,23 +482,26 @@ const styles = StyleSheet.create({
   },
 
   // ======================================================
-  // BACKUP SUB-MENU
+  // BACKUP SUB-MENU - COMPACT
   // ======================================================
   backupBox: {
     flexDirection: 'row',
     marginHorizontal: 8,
-    padding: 8,
+    padding: 6,
     backgroundColor: '#fff7fa',
-    borderRadius: 10,
+    borderRadius: 9,
     borderWidth: 1,
     borderColor: '#f6d1dc',
-    marginBottom: 5,
+    marginBottom: 4,
   },
 
   backupButton: {
     flex: 1,
-    padding: 9,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     borderRadius: 7,
+    minHeight: 36,
+    justifyContent: 'center',
   },
 
   fullBackupButton: {
@@ -461,8 +516,9 @@ const styles = StyleSheet.create({
   backupButtonText: {
     color: '#ffffff',
     textAlign: 'center',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 10.5,
+    lineHeight: 14,
+    fontWeight: '900',
   },
 
   // ======================================================
@@ -707,7 +763,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: '#f6d1dc',
     backgroundColor: '#ffffff',
@@ -715,9 +772,11 @@ const styles = StyleSheet.create({
 
   paginationButton: {
     backgroundColor: BRAND_COLOR,
-    paddingVertical: 8,
+    paddingVertical: 7,
     paddingHorizontal: 14,
     borderRadius: 8,
+    minHeight: 36,
+    justifyContent: 'center',
   },
 
   paginationButtonDisabled: {
@@ -726,12 +785,16 @@ const styles = StyleSheet.create({
 
   paginationButtonText: {
     color: '#ffffff',
-    fontWeight: '800',
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '900',
   },
 
   pageText: {
     color: '#475467',
-    fontWeight: '800',
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '900',
   },
 
   // ======================================================
