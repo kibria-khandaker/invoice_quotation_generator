@@ -33,49 +33,12 @@ const styles = StyleSheet.create({
   },
 
   // ======================================================
-  // CUSTOM BRAND HEADER - COMPACT
-  // ======================================================
-  historyBrandHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 9,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-  },
-
-  historyHeaderBackButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  historyHeaderTitle: {
-    flex: 1,
-    marginHorizontal: 8,
-    textAlign: 'center',
-    color: '#ffffff',
-    fontSize: 17,
-    lineHeight: 21,
-    fontWeight: '900',
-  },
-
-  historyHeaderSpacer: {
-    width: 36,
-    height: 36,
-  },
-
-  // ======================================================
   // TOP HEADER / SEARCH / MENU - COMPACT
   // ======================================================
   topHeaderWrap: {
     paddingHorizontal: 8,
-    paddingTop: 6,
-    paddingBottom: 4,
+    paddingTop: 7,
+    paddingBottom: 5,
     backgroundColor: '#ffffff',
     elevation: 30,
     zIndex: 3000,
@@ -86,7 +49,7 @@ const styles = StyleSheet.create({
 
   searchRow: {
     flexDirection: 'row',
-    marginBottom: 5,
+    marginBottom: 6,
   },
 
   searchInput: {
@@ -95,7 +58,7 @@ const styles = StyleSheet.create({
     borderColor: '#f3c3d1',
     paddingHorizontal: 8,
     paddingVertical: 5,
-    minHeight: 36,
+    minHeight: 38,
     borderRadius: 10,
     marginRight: 8,
     backgroundColor: '#fff7fa',
@@ -108,8 +71,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff0f5',
     paddingHorizontal: 9,
     paddingVertical: 7,
-    minHeight: 36,
-    minWidth: 40,
+    minHeight: 38,
+    minWidth: 42,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
@@ -800,8 +763,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: '#f6d1dc',
     backgroundColor: '#ffffff',
@@ -809,10 +772,10 @@ const styles = StyleSheet.create({
 
   paginationButton: {
     backgroundColor: BRAND_COLOR,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
     borderRadius: 8,
-    minHeight: 30,
+    minHeight: 36,
     justifyContent: 'center',
   },
 
@@ -822,15 +785,15 @@ const styles = StyleSheet.create({
 
   paginationButtonText: {
     color: '#ffffff',
-    fontSize: 11.5,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '900',
   },
 
   pageText: {
     color: '#475467',
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '900',
   },
 

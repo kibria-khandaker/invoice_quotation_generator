@@ -463,10 +463,6 @@ function UploadBox({ label, imageUri, onPress, imageStyle }) {
 }
 
 function GradientButton({ title, icon, onPress, outline, editGradient, compact }) {
-  const compactTextStyle = compact
-    ? { fontSize: 13, lineHeight: 17, marginLeft: 5 }
-    : null;
-
   if (outline && !editGradient) {
     return (
       <TouchableOpacity
@@ -476,7 +472,10 @@ function GradientButton({ title, icon, onPress, outline, editGradient, compact }
       >
         <Ionicons name={icon} size={compact ? 16 : 18} color={BRAND_COLOR} />
         <Text
-          style={[styles.outlineButtonText, compactTextStyle]}
+          style={[
+            styles.outlineButtonText,
+            compact && styles.actionButtonTextCompact,
+          ]}
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
@@ -501,7 +500,10 @@ function GradientButton({ title, icon, onPress, outline, editGradient, compact }
       >
         <Ionicons name={icon} size={compact ? 16 : 18} color="#ffffff" />
         <Text
-          style={[styles.gradientButtonText, compactTextStyle]}
+          style={[
+            styles.gradientButtonText,
+            compact && styles.actionButtonTextCompact,
+          ]}
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={0.85}
@@ -546,6 +548,7 @@ export default function CreateQuotationScreen({ navigation, route }) {
 
   const isEditMode = Boolean(route?.params?.editData);
   const isDraftMode = Boolean(route?.params?.draftData);
+
 
   // ======================================================
   // INIT : LOAD EDIT DATA OR NEW QUOTATION DEFAULTS
@@ -618,7 +621,6 @@ export default function CreateQuotationScreen({ navigation, route }) {
 
         return;
       }
-
       // EDIT MODE:
       // Do not generate a new quotation number.
       // Do not auto-fill settings defaults.
@@ -727,7 +729,7 @@ export default function CreateQuotationScreen({ navigation, route }) {
     };
 
     init();
-  }, [route?.params?.editData, route?.params?.draftData]);
+}, [route?.params?.editData, route?.params?.draftData]);
 
   // ======================================================
   // UPDATE SINGLE FIELD
@@ -958,7 +960,7 @@ export default function CreateQuotationScreen({ navigation, route }) {
 
   const grandTotal = taxableAmount + taxValue;
 
-  // ======================================================
+    // ======================================================
   // EDIT MODE DISPLAY LABEL
   // Used only for showing edit mode banner.
   // No data/calculation logic is changed here.
@@ -981,15 +983,11 @@ export default function CreateQuotationScreen({ navigation, route }) {
   };
 
   // ======================================================
-  // QUOTATION DRAFT HELPERS
+  // DRAFT HELPERS
   // Important:
-  // - The main form state is named "invoice" in this file,
-  //   but it actually stores current quotation form data.
-  // - This project still stores item rows in "services".
-  //   Do not rename services -> items here.
-  // - quotationNumber/date alone are not treated as meaningful user data.
-  // - blank default item/service row is not treated as meaningful data.
-  // - partial data is valid for draft.
+  // - quotationNumber/date alone are not treated as meaningful user data
+  // - blank default item row is not treated as meaningful data
+  // - partial data is valid for draft
   // ======================================================
   const cleanDraftValue = (value) => toInputString(value).trim();
 
@@ -1098,7 +1096,7 @@ export default function CreateQuotationScreen({ navigation, route }) {
     };
   };
 
-  // ======================================================
+    // ======================================================
   // CLEAN DRAFT DATA BEFORE PREVIEW
   // Important:
   // Draft ID must not be treated as final quotation ID.
@@ -1121,7 +1119,6 @@ export default function CreateQuotationScreen({ navigation, route }) {
 
     return cleanQuotationData;
   };
-
   // ======================================================
   // GO TO PREVIEW SCREEN
   // IMPORTANT:
@@ -1129,10 +1126,8 @@ export default function CreateQuotationScreen({ navigation, route }) {
   // calculated values are sent separately.
   // ======================================================
   const handlePreview = () => {
-    const previewReadyInvoice = getPreviewReadyInvoice();
-
     const previewInvoice = {
-      ...previewReadyInvoice,
+      ...invoice,
       companyContact:
         buildCompanyContact(invoice.companyEmail, invoice.companyPhone) ||
         invoice.companyContact,
@@ -1163,7 +1158,7 @@ export default function CreateQuotationScreen({ navigation, route }) {
   // ======================================================
   const handleUpdateQuotation = () => {
     if (!isEditMode) {
-      handleDraftPress();
+      navigation.navigate('DraftQuotation');
       return;
     }
 

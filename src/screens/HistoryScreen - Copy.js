@@ -9,13 +9,11 @@ import {
   Alert,
   TextInput,
   ScrollView,
-  StatusBar,
 } from 'react-native';
 
 import JSZip from 'jszip';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -618,37 +616,9 @@ export default function HistoryScreen({ navigation }) {
   // 10. MAIN RENDER
   // ========================================================
   return (
-    <SafeAreaView
-      style={styles.historyMainContainer}
-      edges={['top', 'left', 'right', 'bottom']}
-    >
-      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLOR} />
-
+    <SafeAreaView style={styles.historyMainContainer}>
       {/* ----------------------------------------------------
-          A. CUSTOM BRAND HEADER
-          IMPORTANT: UI only. No History logic is changed.
-      ------------------------------------------------------ */}
-      <LinearGradient
-        colors={[BRAND_COLOR, '#ff6b95', '#ffb7ca']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.historyBrandHeader}
-      >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => navigation.goBack()}
-          style={styles.historyHeaderBackButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#ffffff" />
-        </TouchableOpacity>
-
-        <Text style={styles.historyHeaderTitle}>Quotation History</Text>
-
-        <View style={styles.historyHeaderSpacer} />
-      </LinearGradient>
-
-      {/* ----------------------------------------------------
-          B. TOP SEARCH / SUMMARY AREA
+          A. TOP HEADER AREA
       ------------------------------------------------------ */}
       <View style={styles.topHeaderWrap}>
         <View style={styles.searchRow}>

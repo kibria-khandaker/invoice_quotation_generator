@@ -1,6 +1,6 @@
 // src/screens/DraftQuotationScreen.js
 
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,10 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
-  StatusBar,
 } from 'react-native';
 
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import styles, { BRAND_COLOR } from './DraftQuotationScreenStyle';
 
@@ -23,9 +21,6 @@ import {
   clearDraftQuotations,
 } from '../services/storageService';
 
-// ======================================================
-// HELPERS
-// ======================================================
 const parseAmount = (value) => {
   const amount = parseFloat(value);
   return Number.isNaN(amount) ? 0 : amount;
@@ -52,11 +47,7 @@ const formatDraftDate = (value) => {
     return String(value);
   }
 
-  try {
-    return date.toLocaleDateString('en-GB');
-  } catch {
-    return String(value);
-  }
+  return date.toLocaleDateString();
 };
 
 const safeText = (value, fallback = '') => {
@@ -88,51 +79,22 @@ const getFirstMeaningfulItemName = (item) => {
 
   if (!found) return '';
 
-  return safeText(found?.name).trim() || safeText(found?.description).trim();
-};
-
-const buildQuotationPreviewDataFromDraft = (draft) => {
-  const {
-    id,
-    draftId,
-    isDraft,
-    status,
-    draftTitle,
-    updatedAt,
-    createdAt,
-    ...cleanQuotationData
-  } = draft || {};
-
-  return cleanQuotationData;
+  return safeText(found.name).trim() || safeText(found.description).trim();
 };
 
 export default function DraftQuotationScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
-
   const [drafts, setDrafts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-
-  useLayoutEffect(() => {
-    navigation?.setOptions?.({
-      headerShown: false,
-    });
-  }, [navigation]);
 
   // ======================================================
   // LOAD DRAFTS
   // ======================================================
   const loadDrafts = async () => {
-    try {
-      setLoading(true);
-      const data = await getDraftQuotations();
-      setDrafts(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.log('Load drafts error:', error);
-      setDrafts([]);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const data = await getDraftQuotations();
+    setDrafts(Array.isArray(data) ? data : []);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -166,13 +128,8 @@ export default function DraftQuotationScreen({ navigation }) {
   });
 
   // ======================================================
-  // ACTIONS
+  // DELETE SINGLE DRAFT
   // ======================================================
-  const handleRefresh = async () => {
-    setSearch('');
-    await loadDrafts();
-  };
-
   const handleDeleteDraft = (item) => {
     const draftId = item?.draftId || item?.id;
 
@@ -203,6 +160,9 @@ export default function DraftQuotationScreen({ navigation }) {
     );
   };
 
+  // ======================================================
+  // CLEAR ALL DRAFTS
+  // ======================================================
   const handleClearAllDrafts = () => {
     if (drafts.length === 0) {
       Alert.alert('No Drafts', 'There are no drafts to clear.');
@@ -231,57 +191,44 @@ export default function DraftQuotationScreen({ navigation }) {
     );
   };
 
-  const handleContinueDraft = (item) => {
-    navigation.navigate('Create', {
-      draftData: item,
-      mode: 'draftEdit',
-    });
-  };
-
-  const handlePreviewDraft = (item) => {
-    const previewData = buildQuotationPreviewDataFromDraft(item);
-
-    navigation.navigate('Preview', {
-      quotationData: previewData,
-      mode: 'draftPreview',
-    });
+  // ======================================================
+  // CONTINUE DRAFT PLACEHOLDER
+  // Phase D4 will connect this to CreateQuotationScreen.
+  // ======================================================
+  const handleContinueDraft = () => {
+    Alert.alert(
+      'Coming Next',
+      'Continue/Edit Draft will be connected in Phase D4.'
+    );
   };
 
   // ======================================================
-  // RENDER ITEM
+  // RENDER DRAFT CARD
   // ======================================================
   const renderDraftItem = ({ item }) => {
     const title = getDraftDisplayTitle(item);
     const firstItemName = getFirstMeaningfulItemName(item);
     const updatedDate = item?.updatedAt || item?.createdAt;
 
-    const subtitleText = item?.clientCompany
-      ? `Client Company: ${item.clientCompany}`
-      : firstItemName
-        ? `Item: ${firstItemName}`
-        : 'Incomplete quotation draft';
-
     return (
       <View style={styles.draftCard}>
-        <View style={styles.cardTopRow}>
-          <View style={styles.cardTitleArea}>
-            <View style={styles.draftIconBox}>
-              <Ionicons
-                name="document-text-outline"
-                size={18}
-                color={BRAND_COLOR}
-              />
-            </View>
+        <View style={styles.draftCardHeader}>
+          <View style={styles.draftIconBox}>
+            <Ionicons name="document-text-outline" size={20} color={BRAND_COLOR} />
+          </View>
 
-            <View style={styles.cardTextArea}>
-              <Text style={styles.draftTitle} numberOfLines={1}>
-                {title}
-              </Text>
+          <View style={styles.draftTitleWrap}>
+            <Text style={styles.draftTitle} numberOfLines={1}>
+              {title}
+            </Text>
 
-              <Text style={styles.draftSubTitle} numberOfLines={1}>
-                {subtitleText}
-              </Text>
-            </View>
+            <Text style={styles.draftSubTitle} numberOfLines={1}>
+              {item?.clientCompany
+                ? `Client Company: ${item.clientCompany}`
+                : firstItemName
+                  ? `Item: ${firstItemName}`
+                  : 'Incomplete quotation draft'}
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -289,41 +236,40 @@ export default function DraftQuotationScreen({ navigation }) {
             style={styles.deleteButton}
             onPress={() => handleDeleteDraft(item)}
           >
-            <Ionicons name="trash-outline" size={20} color="#dc3545" />
+            <Ionicons name="trash-outline" size={21} color="#dc3545" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoText} numberOfLines={1}>
-            <Text style={styles.infoLabel}>QTN : </Text>
-            {item?.quotationNumber || 'N/A'}
-          </Text>
+        <View style={styles.draftInfoGrid}>
+          <View style={styles.infoPill}>
+            <Text style={styles.infoLabel}>Amount</Text>
+            <Text style={styles.infoValue}>৳ {formatAmount(item?.grandTotal)}</Text>
+          </View>
 
-          <Text style={styles.infoTextRight} numberOfLines={1}>
-            <Text style={styles.infoLabel}>Updated </Text>
-            {formatDraftDate(updatedDate)}
-          </Text>
+          <View style={styles.infoPill}>
+            <Text style={styles.infoLabel}>QTN</Text>
+            <Text style={styles.infoValue} numberOfLines={1}>
+              {item?.quotationNumber || 'N/A'}
+            </Text>
+          </View>
+
+          <View style={styles.infoPill}>
+            <Text style={styles.infoLabel}>Updated</Text>
+            <Text style={styles.infoValue}>{formatDraftDate(updatedDate)}</Text>
+          </View>
         </View>
 
-        <View style={styles.infoRow}>
-          <Text style={styles.infoText} numberOfLines={1}>
-            <Text style={styles.infoLabel}>Amount : </Text>
-            ৳ {formatAmount(item?.grandTotal)}
+        {item?.companyName ? (
+          <Text style={styles.fromCompanyText} numberOfLines={1}>
+            From: {item.companyName}
           </Text>
-
-          <Text style={styles.infoTextRight} numberOfLines={1}>
-            <Text style={styles.infoLabel}>From: </Text>
-            {item?.companyName || 'N/A'}
-          </Text>
-        </View>
-
-        <View style={styles.cardDivider} />
+        ) : null}
 
         <View style={styles.cardActions}>
           <TouchableOpacity
             activeOpacity={0.88}
             style={[styles.cardActionButton, styles.continueButton]}
-            onPress={() => handleContinueDraft(item)}
+            onPress={handleContinueDraft}
           >
             <Ionicons name="create-outline" size={15} color="#ffffff" />
             <Text style={styles.cardActionButtonText}>Continue</Text>
@@ -332,9 +278,14 @@ export default function DraftQuotationScreen({ navigation }) {
           <TouchableOpacity
             activeOpacity={0.88}
             style={[styles.cardActionButton, styles.previewButton]}
-            onPress={() => handlePreviewDraft(item)}
+            onPress={() =>
+              Alert.alert(
+                'Coming Next',
+                'Draft preview will be connected after Continue/Edit draft flow.'
+              )
+            }
           >
-            <Ionicons name="eye-outline" size={15} color="#7b4cc2" />
+            <Ionicons name="eye-outline" size={15} color="#6f42c1" />
             <Text style={styles.previewButtonText}>Preview</Text>
           </TouchableOpacity>
         </View>
@@ -342,72 +293,47 @@ export default function DraftQuotationScreen({ navigation }) {
     );
   };
 
-  const bottomListPadding =
-    filteredDrafts.length > 0 ? insets.bottom + 54 : insets.bottom + 16;
-
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLOR} />
-
-      {/* HEADER */}
-      <LinearGradient
-        colors={[BRAND_COLOR, '#ff6b95', '#ffb7ca']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.topHeader}
-      >
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.headerIconButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={22} color="#ffffff" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Draft Quotations</Text>
-
-        <View style={styles.headerRightSpacer} />
-      </LinearGradient>
-
-      {/* TOP CONTROLS */}
-      <View style={styles.topControls}>
-        <Text style={styles.helperText}>Saved incomplete quotation drafts</Text>
-
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Ionicons
-              name="search-outline"
-              size={18}
-              color="#98a2b3"
-              style={styles.searchIcon}
-            />
-
-            <TextInput
-              placeholder="Search draft..."
-              placeholderTextColor="#98a2b3"
-              value={search}
-              onChangeText={setSearch}
-              style={styles.searchInput}
-            />
-
-            {search ? (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => setSearch('')}
-                style={styles.clearSearchButton}
-              >
-                <Ionicons name="close-circle" size={18} color="#98a2b3" />
-              </TouchableOpacity>
-            ) : null}
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <View style={styles.topPanel}>
+        <View style={styles.titleRow}>
+          <View>
+            <Text style={styles.screenTitle}>Draft Quotations</Text>
+            <Text style={styles.screenSubTitle}>
+              Saved incomplete quotation drafts
+            </Text>
           </View>
 
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.refreshButton}
-            onPress={handleRefresh}
+            onPress={loadDrafts}
           >
-            <Ionicons name="refresh" size={20} color={BRAND_COLOR} />
+            <Ionicons name="refresh" size={19} color={BRAND_COLOR} />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchRow}>
+          <Ionicons
+            name="search-outline"
+            size={18}
+            color="#98a2b3"
+            style={styles.searchIcon}
+          />
+
+          <TextInput
+            placeholder="Search draft..."
+            placeholderTextColor="#98a2b3"
+            value={search}
+            onChangeText={setSearch}
+            style={styles.searchInput}
+          />
+
+          {search ? (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={18} color="#98a2b3" />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         <View style={styles.summaryRow}>
@@ -429,19 +355,11 @@ export default function DraftQuotationScreen({ navigation }) {
         </View>
       </View>
 
-      {/* LIST */}
       <FlatList
         data={filteredDrafts}
         keyExtractor={(item, index) => String(item?.draftId || item?.id || index)}
         renderItem={renderDraftItem}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContent,
-          {
-            paddingBottom: bottomListPadding,
-          },
-        ]}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={() => (
           <View style={styles.emptyBox}>
             <Ionicons name="folder-open-outline" size={44} color="#f3a4bb" />
@@ -456,36 +374,25 @@ export default function DraftQuotationScreen({ navigation }) {
 
             <TouchableOpacity
               activeOpacity={0.88}
-              style={styles.emptyCreateButton}
+              style={styles.createButton}
               onPress={() => navigation.navigate('Create')}
             >
               <Ionicons name="add-circle-outline" size={17} color="#ffffff" />
-              <Text style={styles.emptyCreateButtonText}>
-                Create New Quotation
-              </Text>
+              <Text style={styles.createButtonText}>Create New Quotation</Text>
             </TouchableOpacity>
           </View>
         )}
       />
 
-      {/* FIXED FOOTER BUTTON */}
       {filteredDrafts.length > 0 && (
-        <View
-          style={[
-            styles.footerFloating,
-            {
-              bottom: Math.max(insets.bottom, 10),
-            },
-          ]}
-          pointerEvents="box-none"
-        >
+        <View style={styles.footerAction}>
           <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.createNewButton}
+            activeOpacity={0.88}
+            style={styles.createFullButton}
             onPress={() => navigation.navigate('Create')}
           >
             <Ionicons name="add-circle-outline" size={18} color="#ffffff" />
-            <Text style={styles.createNewButtonText}>Create New Quotation</Text>
+            <Text style={styles.createFullButtonText}>Create New Quotation</Text>
           </TouchableOpacity>
         </View>
       )}

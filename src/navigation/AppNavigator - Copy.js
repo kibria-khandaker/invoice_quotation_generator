@@ -50,7 +50,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="History"
           component={HistoryScreen}
-          options={{ headerShown: false }}
+          options={{ title: 'Quotation History' }}
         />
 
         <Stack.Screen
