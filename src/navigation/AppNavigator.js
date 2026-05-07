@@ -1,4 +1,10 @@
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useState } from 'react';
+
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from '@react-navigation/native';
+
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -22,11 +28,58 @@ import InvoiceHistoryScreen from '../screens/InvoiceHistoryScreen';
 import DraftQuotationScreen from '../screens/DraftQuotationScreen';
 
 
+import FloatingQuickButtonSettingsScreen from '../screens/FloatingQuickButtonSettingsScreen';
+// ======================================================
+// FLOATING QUICK BUTTON MODULE START
+// Safe optional module.
+// To remove this feature later:
+// 1. Remove this import.
+// 2. Remove appNavigationRef/currentRoute tracking block.
+// 3. Remove <FloatingQuickButton /> render block.
+// 4. Delete src/components/FloatingQuickButton folder.
+// ======================================================
+import FloatingQuickButton from '../components/FloatingQuickButton';
+
+export const appNavigationRef = createNavigationContainerRef();
+
+const getFloatingQuickButtonCurrentRouteName = () => {
+  return appNavigationRef.getCurrentRoute()?.name || 'Home';
+};
+// ======================================================
+// FLOATING QUICK BUTTON MODULE END
+// ======================================================
+
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
+  // ======================================================
+  // FLOATING QUICK BUTTON MODULE START
+  // Safe optional current route state.
+  // Remove this state if FloatingQuickButton module is removed.
+  // ======================================================
+  const [currentRouteName, setCurrentRouteName] = useState('Home');
+  // ======================================================
+  // FLOATING QUICK BUTTON MODULE END
+  // ======================================================
+
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      // ======================================================
+      // FLOATING QUICK BUTTON MODULE START
+      // Safe optional navigation ref + route tracking.
+      // Remove ref/onReady/onStateChange if FloatingQuickButton is removed.
+      // ======================================================
+      ref={appNavigationRef}
+      onReady={() => {
+        setCurrentRouteName(getFloatingQuickButtonCurrentRouteName());
+      }}
+      onStateChange={() => {
+        setCurrentRouteName(getFloatingQuickButtonCurrentRouteName());
+      }}
+      // ======================================================
+      // FLOATING QUICK BUTTON MODULE END
+      // ======================================================
+    >
       <Stack.Navigator>
         <Stack.Screen
           name="Home"
@@ -43,7 +96,6 @@ export default function AppNavigator() {
         <Stack.Screen
           name="Preview"
           component={PreviewScreen}
-          // options={{ title: 'Preview Quotation' }}
           options={{ headerShown: false }}
         />
 
@@ -58,7 +110,7 @@ export default function AppNavigator() {
           component={DraftQuotationScreen}
           options={{ headerShown: false }}
         />
-        
+
         <Stack.Screen
           name="CreateInvoice"
           component={CreateInvoiceScreen}
@@ -94,48 +146,68 @@ export default function AppNavigator() {
           component={SettingsScreen}
           options={{ headerShown: false }}
         />
-        
-<Stack.Screen
-  name="CompanySettings"
-  component={CompanySettingsScreen}
-  options={{ title: 'Company Information' }}
-/>
-<Stack.Screen
-  name="ClientSettings"
-  component={ClientSettingsScreen}
-  options={{ title: 'Client Profiles' }}
-/>
-<Stack.Screen
-  name="ItemsCatalogSettings"
-  component={ItemsCatalogSettingsScreen}
-  options={{ title: 'Items Catalog' }}
-/>
-<Stack.Screen
-  name="PaymentSettings"
-  component={PaymentSettingsScreen}
-  options={{ title: 'Payment Terms & Method' }}
-/>
 
-<Stack.Screen
-  name="MobilePaymentSettings"
-  component={MobilePaymentSettingsScreen}
-  options={{ title: 'Mobile Payment Info' }}
-/>
+        <Stack.Screen
+          name="CompanySettings"
+          component={CompanySettingsScreen}
+          options={{ title: 'Company Information' }}
+        />
 
-<Stack.Screen
-  name="SignatureSettings"
-  component={SignatureSettingsScreen}
-  options={{ title: 'Signature' }}
-/>
+        <Stack.Screen
+          name="ClientSettings"
+          component={ClientSettingsScreen}
+          options={{ title: 'Client Profiles' }}
+        />
 
-<Stack.Screen
-  name="NotesSettings"
-  component={NotesSettingsScreen}
-  options={{ title: 'Notes' }}
-/>
+        <Stack.Screen
+          name="ItemsCatalogSettings"
+          component={ItemsCatalogSettingsScreen}
+          options={{ title: 'Items Catalog' }}
+        />
 
+        <Stack.Screen
+          name="PaymentSettings"
+          component={PaymentSettingsScreen}
+          options={{ title: 'Payment Terms & Method' }}
+        />
+
+        <Stack.Screen
+          name="MobilePaymentSettings"
+          component={MobilePaymentSettingsScreen}
+          options={{ title: 'Mobile Payment Info' }}
+        />
+
+        <Stack.Screen
+          name="SignatureSettings"
+          component={SignatureSettingsScreen}
+          options={{ title: 'Signature' }}
+        />
+
+        <Stack.Screen
+          name="NotesSettings"
+          component={NotesSettingsScreen}
+          options={{ title: 'Notes' }}
+        />
+        <Stack.Screen
+          name="FloatingQuickButtonSettings"
+          component={FloatingQuickButtonSettingsScreen}
+          options={{ title: 'Floating Quick Button' }}
+        />
 
       </Stack.Navigator>
+
+      {/* ======================================================
+          FLOATING QUICK BUTTON MODULE START
+          Safe optional global floating shortcut button.
+          Remove this render block if FloatingQuickButton is removed.
+      ====================================================== */}
+      <FloatingQuickButton
+        navigationRef={appNavigationRef}
+        currentRouteName={currentRouteName}
+      />
+      {/* ======================================================
+          FLOATING QUICK BUTTON MODULE END
+      ====================================================== */}
     </NavigationContainer>
   );
 }

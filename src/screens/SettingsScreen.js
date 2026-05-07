@@ -87,6 +87,15 @@ const SETTING_ITEMS = [
     accentColor: '#ec4899',
     iconGradient: ['#ffe3f2', '#ffd5eb'],
   },
+  {
+    id: 'floating-quick-button',
+    title: 'Floating Quick Button',
+    subtitle: 'Turn the quick navigation button on or off.',
+    icon: 'options-outline',
+    route: 'FloatingQuickButtonSettings',
+    accentColor: '#14b8a6',
+    iconGradient: ['#ddfffa', '#c9fff7'],
+  },
 ];
 
 export default function SettingsScreen({ navigation }) {
