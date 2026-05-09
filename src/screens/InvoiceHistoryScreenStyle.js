@@ -2,7 +2,7 @@
 
 // ======================================================
 // INVOICE SIDE HISTORY STYLE
-// PHASE: FIXED CONTROLS + QUOTATION-LIKE MENU SHELL
+// PHASE: FILTERS + QUOTATION-LIKE SELECTION + BACKUP LOGIC UI
 //
 // IMPORTANT:
 // - This style file belongs only to InvoiceHistoryScreen.
@@ -20,11 +20,6 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_COLOR,
   },
 
-  // ======================================================
-  // INVOICE SIDE HEADER SPACING
-  // EDIT:
-  // Reduced empty pink space under subtitle.
-  // ======================================================
   headerGradient: {
     minHeight: 92,
     paddingTop: 12,
@@ -76,9 +71,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
 
-  // ======================================================
-  // FIXED TOP CONTROLS
-  // ======================================================
   controlsCard: {
     backgroundColor: '#ffffff',
     borderRadius: 22,
@@ -135,11 +127,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ======================================================
-  // FILTER ROW COMPACT FIX
-  // EDIT:
-  // Showing/Total gets fixed room and stays one line.
-  // ======================================================
   filterRow: {
     marginTop: 8,
     flexDirection: 'row',
@@ -204,11 +191,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-  // ======================================================
-  // INVOICE SIDE PAGE SIZE DROPDOWN
-  // NEW:
-  // Quotation-like inline dropdown for Show: 10 / 20 / 50 / 100.
-  // ======================================================
   pageSizeDropdownWrap: {
     position: 'relative',
     zIndex: 4000,
@@ -261,12 +243,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  // ======================================================
-  // INVOICE SIDE ADVANCED MENU SHELL
-  // NEW:
-  // UI-only menu shell following Quotation History pattern.
-  // Logic will be connected in next steps.
-  // ======================================================
   advancedMenuWrap: {
     backgroundColor: '#ffffff',
     paddingBottom: 5,
@@ -303,11 +279,19 @@ const styles = StyleSheet.create({
     borderRightColor: '#f6d1dc',
   },
 
+  menuTabActive: {
+    backgroundColor: '#fff0f5',
+  },
+
   menuTabText: {
     marginTop: 2,
     fontSize: 10.5,
     lineHeight: 13,
     fontWeight: '900',
+    color: '#667085',
+  },
+
+  menuTabTextActive: {
     color: BRAND_COLOR,
   },
 
@@ -318,6 +302,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     borderWidth: 1,
     borderColor: '#f6d1dc',
+    marginBottom: 4,
   },
 
   subMenuPlaceholderText: {
@@ -325,6 +310,331 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: '700',
     color: '#667085',
+    textAlign: 'center',
+  },
+
+  filterInputRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 6,
+  },
+
+  amountInput: {
+    flex: 1,
+    minHeight: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f3c3d1',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  dateRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 7,
+  },
+
+  dateButton: {
+    flex: 1,
+    minHeight: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f3c3d1',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+  },
+
+  dateButtonText: {
+    fontSize: 11.5,
+    lineHeight: 15,
+    fontWeight: '800',
+    color: '#111827',
+  },
+
+  dateButtonPlaceholder: {
+    color: '#98a2b3',
+  },
+
+  sortScrollContent: {
+    paddingRight: 6,
+  },
+
+  sortButton: {
+    minHeight: 31,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f3c3d1',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+
+  sortButtonActive: {
+    backgroundColor: BRAND_COLOR,
+    borderColor: BRAND_COLOR,
+  },
+
+  sortButtonText: {
+    fontSize: 9.8,
+    lineHeight: 13,
+    fontWeight: '900',
+    color: '#667085',
+  },
+
+  sortButtonTextActive: {
+    color: '#ffffff',
+  },
+
+  // ======================================================
+  // INVOICE SIDE SELECTION UI
+  // EDIT:
+  // Quotation-like horizontal SELECT tab controls.
+  // ======================================================
+  selectionToggleButton: {
+    backgroundColor: BRAND_COLOR,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 7,
+    alignItems: 'center',
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+
+  selectionToggleButtonActive: {
+    backgroundColor: '#16a34a',
+  },
+
+  selectionToggleText: {
+    color: '#ffffff',
+    fontSize: 10.5,
+    lineHeight: 14,
+    fontWeight: '900',
+  },
+
+  selectionScroll: {
+    marginTop: 5,
+    borderTopWidth: 1,
+    borderColor: '#f6d1dc',
+    paddingTop: 5,
+  },
+
+  selectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  selectedBadge: {
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: BRAND_COLOR,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 6,
+    minHeight: 28,
+  },
+
+  selectedBadgeIcon: {
+    marginRight: 3,
+  },
+
+  selectedBadgeText: {
+    color: BRAND_COLOR,
+    fontSize: 9.5,
+    lineHeight: 12,
+    fontWeight: '900',
+  },
+
+  outlineActionButton: {
+    paddingVertical: 5,
+    paddingHorizontal: 7,
+    marginRight: 5,
+    borderRadius: 7,
+    borderWidth: 1,
+    backgroundColor: '#ffffff',
+    minHeight: 30,
+    justifyContent: 'center',
+  },
+
+  selectCurrentButton: {
+    borderColor: '#17a2b8',
+  },
+
+  selectCurrentText: {
+    color: '#17a2b8',
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900',
+  },
+
+  selectHistoryButton: {
+    borderColor: '#6f42c1',
+  },
+
+  selectHistoryText: {
+    color: '#6f42c1',
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900',
+  },
+
+  clearButton: {
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    marginLeft: 4,
+    borderWidth: 1,
+    borderColor: '#dc3545',
+    borderRadius: 7,
+    backgroundColor: '#ffffff',
+    minHeight: 29,
+    justifyContent: 'center',
+  },
+
+  clearButtonText: {
+    color: '#dc3545',
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900',
+  },
+
+  solidActionButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 7,
+    marginRight: 6,
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+
+  exportPdfButton: {
+    backgroundColor: '#6f42c1',
+  },
+
+  exportCsvButton: {
+    backgroundColor: '#17a2b8',
+  },
+
+  bulkDeleteButton: {
+    backgroundColor: '#dc3545',
+    marginRight: 0,
+  },
+
+  solidActionText: {
+    color: '#ffffff',
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900',
+  },
+
+  solidActionDangerText: {
+    fontWeight: '900',
+  },
+
+  // Existing card checkbox styles kept.
+  invoiceCardSelected: {
+    borderColor: BRAND_COLOR,
+    backgroundColor: '#fff8fb',
+  },
+
+  selectionCheckWrap: {
+    width: 28,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    paddingTop: 2,
+  },
+
+  selectionCheckBox: {
+    width: 21,
+    height: 21,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: '#f3c3d1',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  selectionCheckBoxActive: {
+    borderColor: BRAND_COLOR,
+    backgroundColor: BRAND_COLOR,
+  },
+
+  // ======================================================
+  // INVOICE SIDE BACKUP UI
+  // Styles for BACKUP tab export/import controls.
+  // ======================================================
+  backupInfoBox: {
+    minHeight: 36,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: '#f3c3d1',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 7,
+  },
+
+  backupInfoText: {
+    flex: 1,
+    marginLeft: 6,
+    fontSize: 10.8,
+    lineHeight: 15,
+    fontWeight: '700',
+    color: '#667085',
+  },
+
+  backupButtonGrid: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 7,
+  },
+
+  backupButton: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f3c3d1',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 6,
+  },
+
+  backupButtonPrimary: {
+    backgroundColor: BRAND_COLOR,
+    borderColor: BRAND_COLOR,
+  },
+
+  backupButtonText: {
+    marginLeft: 5,
+    fontSize: 10.7,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: BRAND_COLOR,
+    textAlign: 'center',
+  },
+
+  backupButtonTextPrimary: {
+    marginLeft: 5,
+    fontSize: 10.7,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: '#ffffff',
     textAlign: 'center',
   },
 
@@ -338,9 +648,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
 
-  // ======================================================
-  // COMPACT INVOICE CARD
-  // ======================================================
   invoiceCard: {
     backgroundColor: '#ffffff',
     borderRadius: 22,
@@ -440,9 +747,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  // ======================================================
-  // COMPACT AMOUNT BOXES
-  // ======================================================
   amountGrid: {
     flexDirection: 'row',
     gap: 7,
@@ -535,9 +839,6 @@ const styles = StyleSheet.create({
     color: '#7c3aed',
   },
 
-  // ======================================================
-  // FIXED BOTTOM PAGINATION
-  // ======================================================
   paginationBox: {
     minHeight: 52,
     borderRadius: 20,

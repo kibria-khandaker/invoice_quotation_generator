@@ -2,15 +2,19 @@
 
 // ======================================================
 // INVOICE SIDE HISTORY SCREEN
-// PHASE: REAL SAVED INVOICE LIST + QUOTATION-LIKE MENU SHELL
+// PHASE: REAL SAVED INVOICE LIST + FILTERS + SELECTION + BACKUP + IMPORT CONFLICT LOGIC
 //
 // IMPORTANT:
 // - This screen lists only saved/final invoice data.
 // - Draft invoices are shown in InvoiceDraftScreen only.
 // - Quotation HistoryScreen.js is not imported or edited.
-// - Show dropdown and Show/Hide Menu now follow Quotation-like UI.
-// - Future PDF/Edit/Filter/Select/Backup advanced logic can be
-//   connected step by step.
+// - FILTERS tab has real Min/Max/Date/Sort logic.
+// - SELECT tab now follows Quotation-like selection UI/options.
+// - BACKUP tab has Invoice CSV export/import.
+// - Import supports conflict handling:
+//   1) Skip Duplicates
+//   2) Replace Existing
+//   3) Keep Both
 // ======================================================
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -18,6 +22,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
+  ScrollView,
   StatusBar,
   Text as RNText,
   TextInput as RNTextInput,
@@ -29,22 +34,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 
 import styles from './InvoiceHistoryScreenStyle';
 
 import {
   deleteInvoice,
   getInvoices,
+  saveAllInvoices,
 } from '../services/storageService';
 
 const BRAND_COLOR = '#fd4475';
 
-// ======================================================
-// INVOICE SIDE PAGE SIZE OPTIONS
-// EDIT:
-// Includes 100 like Quotation History dropdown.
-// ======================================================
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+const SORT_OPTIONS = [
+  { key: 'latest', label: 'LATEST' },
+  { key: 'oldest', label: 'OLDEST' },
+  { key: 'amount_high', label: 'HIGH' },
+  { key: 'amount_low', label: 'LOW' },
+  { key: 'az', label: 'A-Z' },
+];
 
 function Text(props) {
   return (
@@ -93,12 +107,13 @@ const PAYMENT_STATUS_META = {
   },
 };
 
-const formatMoney = (value) => {
+const parseAmount = (value) => {
   const number = parseFloat(value);
+  return Number.isNaN(number) ? 0 : number;
+};
 
-  if (Number.isNaN(number)) {
-    return '0';
-  }
+const formatMoney = (value) => {
+  const number = parseAmount(value);
 
   return number.toLocaleString('en-US', {
     minimumFractionDigits: 0,
@@ -112,6 +127,37 @@ const formatDate = (value) => {
   }
 
   return String(value).split('T')[0];
+};
+
+const formatDateForInput = (date) => {
+  return date.toISOString().split('T')[0];
+};
+
+const getFilterDateTime = (dateString, endOfDay = false) => {
+  if (!dateString) {
+    return null;
+  }
+
+  const dateValue = endOfDay ? `${dateString}T23:59:59` : dateString;
+  const time = new Date(dateValue).getTime();
+
+  return Number.isNaN(time) ? null : time;
+};
+
+const getInvoiceAmount = (invoice) => {
+  return parseAmount(invoice?.totalAmount ?? invoice?.grandTotal ?? 0);
+};
+
+const getInvoiceDateTime = (invoice) => {
+  const rawDate = invoice?.invoiceDate || invoice?.createdAt || invoice?.updatedAt;
+
+  if (!rawDate) {
+    return 0;
+  }
+
+  const time = new Date(rawDate).getTime();
+
+  return Number.isNaN(time) ? 0 : time;
 };
 
 const getStatusMeta = (invoice) => {
@@ -132,21 +178,122 @@ const getSenderDisplayName = (invoice) => {
   return invoice?.companyName || 'N/A';
 };
 
+const getInvoiceSelectionId = (invoice) => {
+  return invoice?.id || '';
+};
+
+// ======================================================
+// INVOICE SIDE CSV HELPERS
+// Smart CSV keeps full invoice object as JSON.
+// This is safer for future fields than flat CSV columns.
+// ======================================================
+const escapeCsvJson = (item) => {
+  return JSON.stringify(item).replace(/"/g, '""');
+};
+
+const buildInvoiceCsv = (items = []) => {
+  const header = 'id,data\n';
+
+  const rows = items
+    .map((item) => {
+      const id = item?.id || `invoice_${Date.now()}`;
+      const safeData = escapeCsvJson(item);
+
+      return `${id},"${safeData}"`;
+    })
+    .join('\n');
+
+  return header + rows;
+};
+
+const parseInvoiceCsv = (fileContent = '') => {
+  const lines = String(fileContent).split(/\r?\n/);
+  lines.shift();
+
+  const importedItems = [];
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+
+    const firstCommaIndex = line.indexOf(',');
+
+    if (firstCommaIndex === -1) continue;
+
+    const rawData = line
+      .substring(firstCommaIndex + 1)
+      .replace(/^"|"$/g, '')
+      .replace(/""/g, '"');
+
+    try {
+      const parsed = JSON.parse(rawData);
+
+      if (parsed && typeof parsed === 'object') {
+        importedItems.push(parsed);
+      }
+    } catch (error) {
+      console.log('Invoice CSV Parse Row Error:', error);
+    }
+  }
+
+  return importedItems;
+};
+
+const normalizeImportedInvoice = (invoice, index = 0) => {
+  const now = new Date().toISOString();
+
+  return {
+    ...invoice,
+    id: invoice?.id || `invoice_import_${Date.now()}_${index}`,
+    saveType: 'saved',
+    invoiceSaveStatus: 'saved',
+    createdAt: invoice?.createdAt || now,
+    updatedAt: now,
+  };
+};
+
+const createKeepBothInvoiceId = (index = 0) => {
+  return `invoice_import_keep_${Date.now()}_${index}_${Math.floor(
+    Math.random() * 100000
+  )}`;
+};
+
 export default function InvoiceHistoryScreen({ navigation }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [searchText, setSearchText] = useState('');
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
   // ======================================================
-  // INVOICE SIDE HISTORY MENU STATES
-  // NEW:
-  // Quotation-like dropdown and show/hide menu UI.
+  // INVOICE SIDE FILTER STATES
+  // Real filter/sort logic for Invoice History.
   // Quotation HistoryScreen is not touched.
+  // ======================================================
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
+  const [sortType, setSortType] = useState('latest');
+
+  // ======================================================
+  // INVOICE SIDE HISTORY MENU STATES
   // ======================================================
   const [isPageSizeDropdownOpen, setIsPageSizeDropdownOpen] = useState(false);
   const [isShowMenuOpen, setIsShowMenuOpen] = useState(false);
+  const [isFilterSubOpen, setIsFilterSubOpen] = useState(false);
+  const [isSelectionSubOpen, setIsSelectionSubOpen] = useState(false);
+  const [isBackupSubOpen, setIsBackupSubOpen] = useState(false);
+
+  // ======================================================
+  // INVOICE SIDE SELECTION STATES
+  // Used by SELECT tab. Only saved/final invoices in this screen
+  // are selectable. Draft records are not touched.
+  // ======================================================
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
 
   const loadInvoices = async () => {
     setLoading(true);
@@ -167,29 +314,79 @@ export default function InvoiceHistoryScreen({ navigation }) {
 
   const filteredInvoices = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
+    const minValue = minAmount ? parseAmount(minAmount) : null;
+    const maxValue = maxAmount ? parseAmount(maxAmount) : null;
+    const fromTime = getFilterDateTime(fromDate);
+    const toTime = getFilterDateTime(toDate, true);
 
-    if (!keyword) {
-      return invoices;
-    }
+    return invoices
+      .filter((item) => {
+        const searchableText = [
+          item?.invoiceNumber,
+          item?.clientName,
+          item?.clientCompany,
+          item?.clientEmail,
+          item?.clientPhone,
+          item?.companyName,
+          item?.referenceQuotationNumber,
+          item?.paymentStatusLabel,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
 
-    return invoices.filter((item) => {
-      const searchableText = [
-        item?.invoiceNumber,
-        item?.clientName,
-        item?.clientCompany,
-        item?.clientEmail,
-        item?.clientPhone,
-        item?.companyName,
-        item?.referenceQuotationNumber,
-        item?.paymentStatusLabel,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
+        const matchesSearch = !keyword || searchableText.includes(keyword);
 
-      return searchableText.includes(keyword);
-    });
-  }, [invoices, searchText]);
+        const amount = getInvoiceAmount(item);
+
+        const afterMin = minValue === null ? true : amount >= minValue;
+        const beforeMax = maxValue === null ? true : amount <= maxValue;
+
+        const itemTime = getInvoiceDateTime(item);
+
+        const afterDate = fromTime === null ? true : itemTime >= fromTime;
+        const beforeDate = toTime === null ? true : itemTime <= toTime;
+
+        return (
+          matchesSearch &&
+          afterMin &&
+          beforeMax &&
+          afterDate &&
+          beforeDate
+        );
+      })
+      .sort((a, b) => {
+        if (sortType === 'latest') {
+          return getInvoiceDateTime(b) - getInvoiceDateTime(a);
+        }
+
+        if (sortType === 'oldest') {
+          return getInvoiceDateTime(a) - getInvoiceDateTime(b);
+        }
+
+        if (sortType === 'amount_high') {
+          return getInvoiceAmount(b) - getInvoiceAmount(a);
+        }
+
+        if (sortType === 'amount_low') {
+          return getInvoiceAmount(a) - getInvoiceAmount(b);
+        }
+
+        if (sortType === 'az') {
+          return getClientDisplayName(a).localeCompare(getClientDisplayName(b));
+        }
+
+        return 0;
+      });
+  }, [
+    invoices,
+    searchText,
+    minAmount,
+    maxAmount,
+    fromDate,
+    toDate,
+    sortType,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -201,6 +398,14 @@ export default function InvoiceHistoryScreen({ navigation }) {
     return filteredInvoices.slice(startIndex, endIndex);
   }, [filteredInvoices, pageSize, safeCurrentPage]);
 
+  const selectedCount = selectedInvoiceIds.length;
+
+  const selectedInvoicesForExport = useMemo(() => {
+    return invoices.filter((item) =>
+      selectedInvoiceIds.includes(getInvoiceSelectionId(item))
+    );
+  }, [invoices, selectedInvoiceIds]);
+
   const handleSearchChange = (text) => {
     setSearchText(text);
     setCurrentPage(1);
@@ -208,18 +413,17 @@ export default function InvoiceHistoryScreen({ navigation }) {
   };
 
   const handleOpenInvoice = (invoice) => {
+    if (isSelectionMode) {
+      handleToggleSelectInvoice(invoice);
+      return;
+    }
+
     navigation.navigate('InvoicePreview', {
       invoiceData: invoice,
     });
   };
 
   const handleEditInvoice = (invoice) => {
-    // ======================================================
-    // INVOICE SIDE HISTORY EDIT ACTION
-    // Existing:
-    // Opens saved invoice in CreateInvoiceScreen with same data/id.
-    // Final saved update flow will be polished in the next phase.
-    // ======================================================
     navigation.navigate('CreateInvoice', {
       editData: invoice,
       isSaved: true,
@@ -230,7 +434,9 @@ export default function InvoiceHistoryScreen({ navigation }) {
   const handleGeneratePdf = (invoice) => {
     Alert.alert(
       'Generate PDF',
-      `PDF generation for ${invoice?.invoiceNumber || 'this invoice'} will be connected in the PDF phase.`
+      `PDF generation for ${
+        invoice?.invoiceNumber || 'this invoice'
+      } will be connected in the PDF phase.`
     );
   };
 
@@ -250,6 +456,10 @@ export default function InvoiceHistoryScreen({ navigation }) {
             const success = await deleteInvoice(invoice.id);
 
             if (success) {
+              setSelectedInvoiceIds((prev) =>
+                prev.filter((id) => id !== invoice.id)
+              );
+
               await loadInvoices();
             } else {
               Alert.alert('Error', 'Invoice could not be deleted.');
@@ -260,11 +470,6 @@ export default function InvoiceHistoryScreen({ navigation }) {
     );
   };
 
-  // ======================================================
-  // INVOICE SIDE HISTORY SHOW DROPDOWN
-  // EDIT:
-  // Replaces Alert menu with Quotation-like inline dropdown.
-  // ======================================================
   const handleShowLimitMenu = () => {
     setIsPageSizeDropdownOpen((prev) => !prev);
   };
@@ -275,22 +480,465 @@ export default function InvoiceHistoryScreen({ navigation }) {
     setIsPageSizeDropdownOpen(false);
   };
 
-  // ======================================================
-  // INVOICE SIDE HISTORY ADVANCED MENU TOGGLE
-  // EDIT:
-  // Replaces Alert menu with Quotation-like show/hide menu shell.
-  // Real filter/select/backup logic will be connected next.
-  // ======================================================
   const handleShowMenu = () => {
-    setIsShowMenuOpen((prev) => !prev);
+    setIsShowMenuOpen((prev) => {
+      const nextValue = !prev;
+
+      if (nextValue) {
+        setIsFilterSubOpen(true);
+        setIsSelectionSubOpen(false);
+        setIsBackupSubOpen(false);
+      }
+
+      return nextValue;
+    });
+
     setIsPageSizeDropdownOpen(false);
   };
 
-  const handleRefreshInvoices = async () => {
+  const handleOpenFilterTab = () => {
+    setIsFilterSubOpen((prev) => !prev);
+    setIsSelectionSubOpen(false);
+    setIsBackupSubOpen(false);
+  };
+
+  const handleOpenSelectionTab = () => {
+    setIsSelectionSubOpen((prev) => !prev);
+    setIsFilterSubOpen(false);
+    setIsBackupSubOpen(false);
+  };
+
+  const handleOpenBackupTab = () => {
+    setIsBackupSubOpen((prev) => !prev);
+    setIsFilterSubOpen(false);
+    setIsSelectionSubOpen(false);
+  };
+
+  const handleResetFilters = async () => {
     setSearchText('');
+    setMinAmount('');
+    setMaxAmount('');
+    setFromDate('');
+    setToDate('');
+    setSortType('latest');
     setCurrentPage(1);
     setIsPageSizeDropdownOpen(false);
+    setSelectedInvoiceIds([]);
+    setIsSelectionMode(false);
+
     await loadInvoices();
+  };
+
+  const handleChangeFilterField = (setter) => (value) => {
+    setter(value);
+    setCurrentPage(1);
+  };
+
+  const handleSelectSort = (type) => {
+    setSortType(type);
+    setCurrentPage(1);
+  };
+
+  // ======================================================
+  // INVOICE SIDE SELECTION LOGIC
+  // EDIT:
+  // Button behavior now always follows the latest user action.
+  // - Select Current Page REPLACES previous selection.
+  // - Select All History REPLACES previous selection.
+  // - Mark Clear clears selection and exits selection mode.
+  // ======================================================
+  const handleToggleSelectionMode = () => {
+    setIsSelectionMode((prev) => {
+      const nextValue = !prev;
+
+      if (!nextValue) {
+        setSelectedInvoiceIds([]);
+      }
+
+      return nextValue;
+    });
+  };
+
+  const handleToggleSelectInvoice = (invoice) => {
+    const invoiceId = getInvoiceSelectionId(invoice);
+
+    if (!invoiceId) {
+      return;
+    }
+
+    setSelectedInvoiceIds((prev) => {
+      if (prev.includes(invoiceId)) {
+        return prev.filter((id) => id !== invoiceId);
+      }
+
+      return [...prev, invoiceId];
+    });
+  };
+
+const handleSelectCurrentPage = () => {
+  const currentPageIds = Array.from(
+    new Set(
+      paginatedInvoices
+        .map(getInvoiceSelectionId)
+        .filter(Boolean)
+    )
+  );
+
+  if (currentPageIds.length === 0) {
+    Alert.alert('No Items', 'There are no invoices on this page to select.');
+    return;
+  }
+
+  setIsSelectionMode(true);
+
+  // INVOICE SIDE SELECT:
+  // Always replace previous selection.
+  // This allows Select All active → Select Page override.
+  setSelectedInvoiceIds(() => currentPageIds);
+};
+
+const handleSelectAllHistory = () => {
+  const filteredInvoiceIds = Array.from(
+    new Set(
+      filteredInvoices
+        .map(getInvoiceSelectionId)
+        .filter(Boolean)
+    )
+  );
+
+  if (filteredInvoiceIds.length === 0) {
+    Alert.alert('No Items', 'There are no filtered/saved invoices to select.');
+    return;
+  }
+
+  setIsSelectionMode(true);
+
+  // INVOICE SIDE SELECT:
+  // Always replace previous selection.
+  // This allows Select Page active → Select All override.
+  setSelectedInvoiceIds(() => filteredInvoiceIds);
+};
+
+  const handleClearSelection = () => {
+    setSelectedInvoiceIds([]);
+    setIsSelectionMode(false);
+  };
+
+  const handleExportSelectedInvoicePdfs = () => {
+    if (selectedInvoiceIds.length === 0) {
+      Alert.alert('No Selection', 'Please select at least one invoice.');
+      return;
+    }
+
+    Alert.alert(
+      'Export Selected PDFs',
+      'Invoice selected PDF export will be connected in the PDF phase.'
+    );
+  };
+
+  const handleDeleteSelectedInvoices = () => {
+    if (selectedInvoiceIds.length === 0) {
+      Alert.alert('No Selection', 'Please select invoices first.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Selected',
+      `Do you want to delete ${selectedInvoiceIds.length} selected invoice(s)?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              let successCount = 0;
+
+              for (const invoiceId of selectedInvoiceIds) {
+                const success = await deleteInvoice(invoiceId);
+
+                if (success) {
+                  successCount += 1;
+                }
+              }
+
+              setSelectedInvoiceIds([]);
+              setIsSelectionMode(false);
+
+              await loadInvoices();
+
+              Alert.alert(
+                'Deleted',
+                `${successCount} selected invoice(s) deleted successfully.`
+              );
+            } catch (error) {
+              console.log('Delete Selected Invoices Error:', error);
+              Alert.alert('Error', 'Selected invoices could not be deleted.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // ======================================================
+  // INVOICE SIDE BACKUP LOGIC
+  // Export/Import Invoice CSV only.
+  // Import conflict handling supports:
+  // - Skip Duplicates
+  // - Replace Existing
+  // - Keep Both
+  // ======================================================
+  const handleExportInvoiceCsv = async (itemsToExport = [], exportType = 'all') => {
+    try {
+      if (!itemsToExport.length) {
+        Alert.alert('No Data', 'There are no invoices to export.');
+        return;
+      }
+
+      setLoading(true);
+
+      const csv = buildInvoiceCsv(itemsToExport);
+
+      const fileName = `invoice_${exportType}_backup_${Date.now()}.csv`;
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+
+      await FileSystem.writeAsStringAsync(fileUri, csv);
+
+      const sharingAvailable = await Sharing.isAvailableAsync();
+
+      if (sharingAvailable) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert('Export Ready', `CSV file saved at: ${fileUri}`);
+      }
+    } catch (error) {
+      console.log('Invoice CSV Export Error:', error);
+      Alert.alert('Export Error', 'Invoice CSV could not be exported.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportAllInvoices = () => {
+    handleExportInvoiceCsv(invoices, 'all');
+  };
+
+  const handleExportFilteredInvoices = () => {
+    handleExportInvoiceCsv(filteredInvoices, 'filtered');
+  };
+
+  const handleExportSelectedInvoices = () => {
+    if (!selectedInvoicesForExport.length) {
+      Alert.alert('No Selection', 'Please select invoices first.');
+      return;
+    }
+
+    handleExportInvoiceCsv(selectedInvoicesForExport, 'selected');
+  };
+
+  const getImportConflictCount = (itemsToImport = []) => {
+    const existingIds = new Set(
+      invoices.map((item) => getInvoiceSelectionId(item)).filter(Boolean)
+    );
+
+    const importedIds = new Set();
+    let conflictCount = 0;
+
+    itemsToImport.forEach((item, index) => {
+      const normalized = normalizeImportedInvoice(item, index);
+      const invoiceId = getInvoiceSelectionId(normalized);
+
+      if (
+        !invoiceId ||
+        existingIds.has(invoiceId) ||
+        importedIds.has(invoiceId)
+      ) {
+        conflictCount += 1;
+      }
+
+      if (invoiceId) {
+        importedIds.add(invoiceId);
+      }
+    });
+
+    return conflictCount;
+  };
+
+  const applyImportedInvoices = async (itemsToImport = [], mode = 'skip') => {
+    try {
+      setLoading(true);
+
+      const processedImports = [];
+      const existingIds = new Set(
+        invoices.map((item) => getInvoiceSelectionId(item)).filter(Boolean)
+      );
+
+      itemsToImport.forEach((item, index) => {
+        let normalized = normalizeImportedInvoice(item, index);
+        let invoiceId = getInvoiceSelectionId(normalized);
+
+        if (!invoiceId) {
+          invoiceId = createKeepBothInvoiceId(index);
+          normalized = {
+            ...normalized,
+            id: invoiceId,
+          };
+        }
+
+        const duplicateInsideImport = processedImports.some(
+          (processedItem) => getInvoiceSelectionId(processedItem) === invoiceId
+        );
+
+        const duplicateExisting = existingIds.has(invoiceId);
+        const hasConflict = duplicateExisting || duplicateInsideImport;
+
+        if (mode === 'skip' && hasConflict) {
+          return;
+        }
+
+        if (mode === 'replace') {
+          if (duplicateInsideImport) {
+            const previousIndex = processedImports.findIndex(
+              (processedItem) => getInvoiceSelectionId(processedItem) === invoiceId
+            );
+
+            if (previousIndex !== -1) {
+              processedImports.splice(previousIndex, 1);
+            }
+          }
+
+          processedImports.push(normalized);
+          return;
+        }
+
+        if (mode === 'keepBoth' && hasConflict) {
+          processedImports.push({
+            ...normalized,
+            id: createKeepBothInvoiceId(index),
+            originalImportedId: invoiceId,
+          });
+          return;
+        }
+
+        processedImports.push(normalized);
+      });
+
+      if (!processedImports.length) {
+        Alert.alert(
+          'No New Invoices',
+          'No invoices were imported with the selected conflict option.'
+        );
+        return;
+      }
+
+      let nextInvoices = [];
+
+      if (mode === 'replace') {
+        const importIds = new Set(
+          processedImports.map((item) => getInvoiceSelectionId(item)).filter(Boolean)
+        );
+
+        nextInvoices = [
+          ...processedImports,
+          ...invoices.filter((item) => !importIds.has(getInvoiceSelectionId(item))),
+        ];
+      } else {
+        nextInvoices = [...processedImports, ...invoices];
+      }
+
+      const success = await saveAllInvoices(nextInvoices);
+
+      if (success) {
+        setInvoices(nextInvoices);
+        setCurrentPage(1);
+        setSearchText('');
+        setSelectedInvoiceIds([]);
+        setIsSelectionMode(false);
+
+        Alert.alert(
+          'Import Complete',
+          `Imported ${processedImports.length} invoice(s).`
+        );
+      } else {
+        Alert.alert('Import Error', 'Invoice CSV could not be saved.');
+      }
+    } catch (error) {
+      console.log('Apply Imported Invoices Error:', error);
+      Alert.alert('Import Error', 'Invoice CSV could not be imported.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportInvoiceCsv = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const fileUri = result.assets?.[0]?.uri;
+
+      if (!fileUri) {
+        Alert.alert('Import Error', 'No file selected.');
+        return;
+      }
+
+      setLoading(true);
+
+      const fileContent = await FileSystem.readAsStringAsync(fileUri);
+      const parsedItems = parseInvoiceCsv(fileContent);
+
+      setLoading(false);
+
+      if (!parsedItems.length) {
+        Alert.alert('Import Error', 'No valid invoice data found in this CSV.');
+        return;
+      }
+
+      const conflictCount = getImportConflictCount(parsedItems);
+
+      if (conflictCount > 0) {
+        Alert.alert(
+          'Import Conflicts Found',
+          `${conflictCount} duplicate/conflict invoice(s) found. What do you want to do?`,
+          [
+            {
+              text: 'Skip Duplicates',
+              onPress: () => applyImportedInvoices(parsedItems, 'skip'),
+            },
+            {
+              text: 'Replace Existing',
+              onPress: () => applyImportedInvoices(parsedItems, 'replace'),
+            },
+            {
+              text: 'Keep Both',
+              onPress: () => applyImportedInvoices(parsedItems, 'keepBoth'),
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+          ]
+        );
+
+        return;
+      }
+
+      await applyImportedInvoices(parsedItems, 'skip');
+    } catch (error) {
+      console.log('Invoice CSV Import Error:', error);
+      setLoading(false);
+      Alert.alert('Import Error', 'Invoice CSV could not be imported.');
+    }
   };
 
   const handlePrevPage = () => {
@@ -303,18 +951,38 @@ export default function InvoiceHistoryScreen({ navigation }) {
 
   const renderInvoiceItem = ({ item }) => {
     const statusMeta = getStatusMeta(item);
+    const invoiceId = getInvoiceSelectionId(item);
+    const isSelected = invoiceId ? selectedInvoiceIds.includes(invoiceId) : false;
 
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        style={styles.invoiceCard}
+        style={[
+          styles.invoiceCard,
+          isSelected && styles.invoiceCardSelected,
+        ]}
         onPress={() => handleOpenInvoice(item)}
       >
         <View style={styles.cardTopRow}>
-          {/* ======================================================
-              INVOICE SIDE HISTORY CARD LEFT
-              Client/Company/Invoice number/Date stay on left.
-          ====================================================== */}
+          {isSelectionMode && (
+            <TouchableOpacity
+              activeOpacity={0.82}
+              style={styles.selectionCheckWrap}
+              onPress={() => handleToggleSelectInvoice(item)}
+            >
+              <View
+                style={[
+                  styles.selectionCheckBox,
+                  isSelected && styles.selectionCheckBoxActive,
+                ]}
+              >
+                {isSelected && (
+                  <Ionicons name="checkmark" size={15} color="#ffffff" />
+                )}
+              </View>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.cardLeftArea}>
             <Text style={styles.clientName} numberOfLines={1}>
               {getClientDisplayName(item)}
@@ -333,10 +1001,6 @@ export default function InvoiceHistoryScreen({ navigation }) {
             </Text>
           </View>
 
-          {/* ======================================================
-              INVOICE SIDE HISTORY CARD RIGHT
-              Sender and Payment Status stay on right vertically.
-          ====================================================== */}
           <View style={styles.cardRightArea}>
             <TouchableOpacity
               activeOpacity={0.82}
@@ -377,10 +1041,6 @@ export default function InvoiceHistoryScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ======================================================
-            INVOICE SIDE AMOUNT SUMMARY
-            Compact Total / Paid / Due boxes.
-        ====================================================== */}
         <View style={styles.amountGrid}>
           <View style={styles.amountBox}>
             <Text style={styles.amountLabel}>Total</Text>
@@ -411,7 +1071,9 @@ export default function InvoiceHistoryScreen({ navigation }) {
             onPress={() => handleOpenInvoice(item)}
           >
             <Ionicons name="eye-outline" size={17} color="#16a34a" />
-            <Text style={styles.viewButtonText}>View</Text>
+            <Text style={styles.viewButtonText}>
+              {isSelectionMode ? 'Select' : 'View'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -453,17 +1115,12 @@ export default function InvoiceHistoryScreen({ navigation }) {
         <TouchableOpacity
           activeOpacity={0.86}
           style={styles.refreshButton}
-          onPress={handleRefreshInvoices}
+          onPress={handleResetFilters}
         >
           <Ionicons name="refresh-outline" size={21} color={BRAND_COLOR} />
         </TouchableOpacity>
       </View>
 
-      {/* ======================================================
-          INVOICE SIDE HISTORY TOP CONTROL ROW
-          EDIT:
-          Quotation-like Showing / Show dropdown / Show Menu.
-      ====================================================== */}
       <View style={styles.filterRow}>
         <View style={styles.showingBox}>
           <Text style={styles.showingText} numberOfLines={1}>
@@ -542,46 +1199,347 @@ export default function InvoiceHistoryScreen({ navigation }) {
     </View>
   );
 
-  // ======================================================
-  // INVOICE SIDE HISTORY ADVANCED MENU SHELL
-  // NEW:
-  // UI shell follows Quotation History menu pattern.
-  // Real filter/select/backup logic will be connected step by step.
-  // ======================================================
   const renderAdvancedMenuShell = () => (
     <View style={styles.advancedMenuWrap}>
       <View style={styles.menuTabsWrap}>
         <TouchableOpacity
           activeOpacity={0.86}
-          style={[styles.menuTab, styles.menuTabWithBorder]}
+          style={[
+            styles.menuTab,
+            styles.menuTabWithBorder,
+            isFilterSubOpen && styles.menuTabActive,
+          ]}
+          onPress={handleOpenFilterTab}
         >
-          <Ionicons name="filter-outline" size={20} color={BRAND_COLOR} />
-          <Text style={styles.menuTabText}>FILTERS</Text>
+          <Ionicons
+            name="filter-outline"
+            size={20}
+            color={isFilterSubOpen ? BRAND_COLOR : '#667085'}
+          />
+          <Text
+            style={[
+              styles.menuTabText,
+              isFilterSubOpen && styles.menuTabTextActive,
+            ]}
+          >
+            FILTERS
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.86}
-          style={[styles.menuTab, styles.menuTabWithBorder]}
+          style={[
+            styles.menuTab,
+            styles.menuTabWithBorder,
+            isSelectionSubOpen && styles.menuTabActive,
+          ]}
+          onPress={handleOpenSelectionTab}
         >
           <Ionicons
             name="checkmark-circle-outline"
             size={20}
-            color={BRAND_COLOR}
+            color={isSelectionSubOpen ? BRAND_COLOR : '#667085'}
           />
-          <Text style={styles.menuTabText}>SELECT</Text>
+          <Text
+            style={[
+              styles.menuTabText,
+              isSelectionSubOpen && styles.menuTabTextActive,
+            ]}
+          >
+            SELECT
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.86} style={styles.menuTab}>
-          <Ionicons name="cloud-upload-outline" size={20} color={BRAND_COLOR} />
-          <Text style={styles.menuTabText}>BACKUP</Text>
+        <TouchableOpacity
+          activeOpacity={0.86}
+          style={[
+            styles.menuTab,
+            isBackupSubOpen && styles.menuTabActive,
+          ]}
+          onPress={handleOpenBackupTab}
+        >
+          <Ionicons
+            name="cloud-upload-outline"
+            size={20}
+            color={isBackupSubOpen ? BRAND_COLOR : '#667085'}
+          />
+          <Text
+            style={[
+              styles.menuTabText,
+              isBackupSubOpen && styles.menuTabTextActive,
+            ]}
+          >
+            BACKUP
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.subMenuBox}>
-        <Text style={styles.subMenuPlaceholderText}>
-          Invoice filters, selection, backup and import options will be connected step by step.
-        </Text>
-      </View>
+      {isFilterSubOpen && (
+        <View style={styles.subMenuBox}>
+          <View style={styles.filterInputRow}>
+            <TextInput
+              placeholder="Min"
+              placeholderTextColor="#98a2b3"
+              value={minAmount}
+              keyboardType="numeric"
+              onChangeText={handleChangeFilterField(setMinAmount)}
+              style={styles.amountInput}
+            />
+
+            <TextInput
+              placeholder="Max"
+              placeholderTextColor="#98a2b3"
+              value={maxAmount}
+              keyboardType="numeric"
+              onChangeText={handleChangeFilterField(setMaxAmount)}
+              style={styles.amountInput}
+            />
+          </View>
+
+          <View style={styles.dateRow}>
+            <TouchableOpacity
+              activeOpacity={0.84}
+              style={styles.dateButton}
+              onPress={() => setShowFromPicker(true)}
+            >
+              <Text
+                style={[
+                  styles.dateButtonText,
+                  !fromDate && styles.dateButtonPlaceholder,
+                ]}
+                numberOfLines={1}
+              >
+                {fromDate || 'From'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.84}
+              style={styles.dateButton}
+              onPress={() => setShowToPicker(true)}
+            >
+              <Text
+                style={[
+                  styles.dateButtonText,
+                  !toDate && styles.dateButtonPlaceholder,
+                ]}
+                numberOfLines={1}
+              >
+                {toDate || 'To'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sortScrollContent}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                activeOpacity={0.84}
+                style={[
+                  styles.sortButton,
+                  sortType === option.key && styles.sortButtonActive,
+                ]}
+                onPress={() => handleSelectSort(option.key)}
+              >
+                <Text
+                  style={[
+                    styles.sortButtonText,
+                    sortType === option.key && styles.sortButtonTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {isSelectionSubOpen && (
+        <View style={styles.subMenuBox}>
+          <TouchableOpacity
+            activeOpacity={0.84}
+            style={[
+              styles.selectionToggleButton,
+              isSelectionMode && styles.selectionToggleButtonActive,
+            ]}
+            onPress={handleToggleSelectionMode}
+          >
+            <Text style={styles.selectionToggleText}>
+              {isSelectionMode ? 'Selection ON' : 'Select Items'}
+            </Text>
+          </TouchableOpacity>
+
+          {isSelectionMode && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.selectionScroll}
+            >
+              <View style={styles.selectionRow}>
+                {selectedCount > 0 && (
+                  <View style={styles.selectedBadge}>
+                    <Ionicons
+                      name="layers-outline"
+                      size={12}
+                      color={BRAND_COLOR}
+                      style={styles.selectedBadgeIcon}
+                    />
+                    <Text style={styles.selectedBadgeText}>
+                      {selectedCount} Selected
+                    </Text>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  activeOpacity={0.84}
+                  onPress={handleSelectCurrentPage}
+                  style={[
+                    styles.outlineActionButton,
+                    styles.selectCurrentButton,
+                  ]}
+                >
+                  <Text style={styles.selectCurrentText}>
+                    Select all Current Page items
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.84}
+                  onPress={handleSelectAllHistory}
+                  style={[
+                    styles.outlineActionButton,
+                    styles.selectHistoryButton,
+                  ]}
+                >
+                  <Text style={styles.selectHistoryText}>
+                    Select All History Pages items
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.84}
+                  onPress={handleClearSelection}
+                  style={styles.clearButton}
+                >
+                  <Text style={styles.clearButtonText}>Mark Clear</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          )}
+
+          {isSelectionMode && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.selectionScroll}
+            >
+              <TouchableOpacity
+                activeOpacity={0.84}
+                onPress={handleExportSelectedInvoicePdfs}
+                style={[styles.solidActionButton, styles.exportPdfButton]}
+              >
+                <Text style={styles.solidActionText}>
+                  Export Selected PDFs
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.84}
+                onPress={handleExportSelectedInvoices}
+                style={[styles.solidActionButton, styles.exportCsvButton]}
+              >
+                <Text style={styles.solidActionText}>
+                  Export Selected CSVs for Backup
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.84}
+                onPress={handleDeleteSelectedInvoices}
+                style={[styles.solidActionButton, styles.bulkDeleteButton]}
+              >
+                <Text
+                  style={[
+                    styles.solidActionText,
+                    styles.solidActionDangerText,
+                  ]}
+                >
+                  Delete ({selectedCount}) selected items
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {isBackupSubOpen && (
+        <View style={styles.subMenuBox}>
+          <View style={styles.backupInfoBox}>
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={BRAND_COLOR}
+            />
+            <Text style={styles.backupInfoText} numberOfLines={2}>
+              Export/import saved invoice CSV. Import conflicts can be skipped,
+              replaced, or kept both.
+            </Text>
+          </View>
+
+          <View style={styles.backupButtonGrid}>
+            <TouchableOpacity
+              activeOpacity={0.84}
+              style={styles.backupButton}
+              onPress={handleExportAllInvoices}
+            >
+              <Ionicons
+                name="cloud-download-outline"
+                size={15}
+                color={BRAND_COLOR}
+              />
+              <Text style={styles.backupButtonText}>Export All</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.84}
+              style={styles.backupButton}
+              onPress={handleExportFilteredInvoices}
+            >
+              <Ionicons name="filter-outline" size={15} color={BRAND_COLOR} />
+              <Text style={styles.backupButtonText}>Export Filtered</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.backupButtonGrid}>
+            <TouchableOpacity
+              activeOpacity={0.84}
+              style={styles.backupButton}
+              onPress={handleExportSelectedInvoices}
+            >
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={15}
+                color={BRAND_COLOR}
+              />
+              <Text style={styles.backupButtonText}>Export Selected</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.84}
+              style={[styles.backupButton, styles.backupButtonPrimary]}
+              onPress={handleImportInvoiceCsv}
+            >
+              <Ionicons name="cloud-upload-outline" size={15} color="#ffffff" />
+              <Text style={styles.backupButtonTextPrimary}>Import CSV</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -674,17 +1632,8 @@ export default function InvoiceHistoryScreen({ navigation }) {
       </LinearGradient>
 
       <View style={styles.container}>
-        {/* ======================================================
-            INVOICE SIDE FIXED TOP CONTROLS
-            Search/filter controls stay fixed under header.
-        ====================================================== */}
         {renderHeaderControls()}
 
-        {/* ======================================================
-            INVOICE SIDE ADVANCED MENU
-            NEW:
-            Quotation-like show/hide menu shell.
-        ====================================================== */}
         {isShowMenuOpen && renderAdvancedMenuShell()}
 
         <View style={styles.listArea}>
@@ -731,12 +1680,40 @@ export default function InvoiceHistoryScreen({ navigation }) {
           )}
         </View>
 
-        {/* ======================================================
-            INVOICE SIDE FIXED PAGINATION
-            Pagination stays fixed at bottom.
-        ====================================================== */}
         {renderPaginationFooter()}
       </View>
+
+      {showFromPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowFromPicker(false);
+
+            if (date) {
+              setFromDate(formatDateForInput(date));
+              setCurrentPage(1);
+            }
+          }}
+        />
+      )}
+
+      {showToPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowToPicker(false);
+
+            if (date) {
+              setToDate(formatDateForInput(date));
+              setCurrentPage(1);
+            }
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
