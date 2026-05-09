@@ -40,6 +40,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+ 
+  menuListScroll: {
+    maxHeight: 314,
+  },
+
+  menuListContent: {
+    paddingBottom: 0,
+  },
 
   menuDragIcon: {
     marginRight: 6,

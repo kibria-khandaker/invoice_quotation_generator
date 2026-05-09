@@ -369,11 +369,13 @@ export const saveAllInvoiceRecords = async (records = []) => {
   }
 };
 
+
 // ======================================================
 // INVOICE SIDE: UPSERT MASTER RECORD
 // Same invoice id updates existing record.
-// If id is missing but invoiceNumber matches, it also updates.
-// This prevents duplicate records during Draft ↔ Saved flow.
+// If no id match exists, invoiceNumber is used as fallback.
+// This prevents duplicate records during Draft ↔ Saved flow,
+// while keeping "Keep Both" imported invoices safe.
 // ======================================================
 export const upsertInvoiceRecord = async (
   invoiceData = {},
@@ -383,16 +385,36 @@ export const upsertInvoiceRecord = async (
     const existingRecords = await getAllInvoiceRecords();
     let preparedRecord = prepareInvoiceRecord(invoiceData, lifecycle);
 
-    const existingMatch = existingRecords.find((item) => {
-      const sameId = item.id && item.id === preparedRecord.id;
-
-      const sameInvoiceNumber =
-        preparedRecord.invoiceNumber &&
-        item.invoiceNumber &&
-        item.invoiceNumber === preparedRecord.invoiceNumber;
-
-      return sameId || sameInvoiceNumber;
+    // ======================================================
+    // INVOICE SIDE MATCH PRIORITY
+    // IMPORTANT:
+    // 1) First try same ID match.
+    // 2) Only if ID match is not found, use invoiceNumber fallback.
+    //
+    // This keeps normal duplicate prevention, but avoids collapsing
+    // "Keep Both" imported invoices that intentionally share the
+    // same invoiceNumber with different IDs.
+    // ======================================================
+    const sameIdMatch = existingRecords.find((item) => {
+      return item.id && item.id === preparedRecord.id;
     });
+
+    const sameInvoiceNumberMatch = !sameIdMatch
+      ? existingRecords.find((item) => {
+          return (
+            preparedRecord.invoiceNumber &&
+            item.invoiceNumber &&
+            item.invoiceNumber === preparedRecord.invoiceNumber
+          );
+        })
+      : null;
+
+    const existingMatch = sameIdMatch || sameInvoiceNumberMatch;
+    const matchMode = sameIdMatch
+      ? 'id'
+      : sameInvoiceNumberMatch
+      ? 'invoiceNumber'
+      : 'none';
 
     if (existingMatch) {
       preparedRecord = {
@@ -407,14 +429,20 @@ export const upsertInvoiceRecord = async (
     }
 
     const filteredRecords = existingRecords.filter((item) => {
-      const sameId = item.id && item.id === preparedRecord.id;
+      if (matchMode === 'id') {
+        return !(item.id && item.id === preparedRecord.id);
+      }
 
-      const sameInvoiceNumber =
-        preparedRecord.invoiceNumber &&
-        item.invoiceNumber &&
-        item.invoiceNumber === preparedRecord.invoiceNumber;
+      if (matchMode === 'invoiceNumber') {
+        const sameInvoiceNumber =
+          preparedRecord.invoiceNumber &&
+          item.invoiceNumber &&
+          item.invoiceNumber === preparedRecord.invoiceNumber;
 
-      return !sameId && !sameInvoiceNumber;
+        return !sameInvoiceNumber;
+      }
+
+      return true;
     });
 
     const nextRecords = [preparedRecord, ...filteredRecords];
@@ -427,6 +455,7 @@ export const upsertInvoiceRecord = async (
     return false;
   }
 };
+
 
 // ======================================================
 // INVOICE SIDE: GET ONLY DRAFT INVOICES
@@ -553,18 +582,65 @@ export const deleteInvoice = async (invoiceId) => {
   return deleteInvoiceRecord(invoiceId);
 };
 
+
 // ======================================================
 // INVOICE SIDE: BULK SAVE COMPATIBILITY
-// Saves provided invoices as master records.
-// Existing code can call saveAllInvoices() if needed.
+// Saves provided saved/final invoices as master records.
+//
+// IMPORTANT FIX:
+// - Existing Draft invoices are preserved.
+// - This prevents CSV Import / bulk saved invoice update from
+//   accidentally deleting InvoiceDraftScreen data.
+// - If incoming records intentionally include a matching draft ID,
+//   incoming record wins to avoid duplicates.
 // ======================================================
 export const saveAllInvoices = async (invoices = []) => {
-  const normalizedRecords = invoices.map((item) =>
-    normalizeLegacyInvoiceRecord(item)
-  );
+  try {
+    const existingRecords = await getAllInvoiceRecords();
 
-  return saveAllInvoiceRecords(normalizedRecords);
+    const normalizedIncomingRecords = invoices.map((item) =>
+      normalizeLegacyInvoiceRecord(item)
+    );
+
+    const incomingIds = new Set(
+      normalizedIncomingRecords
+        .map((item) => item.id)
+        .filter(Boolean)
+    );
+
+    const incomingInvoiceNumbers = new Set(
+      normalizedIncomingRecords
+        .map((item) => item.invoiceNumber)
+        .filter(Boolean)
+    );
+
+    // Preserve existing Draft records because InvoiceHistory import
+    // normally sends only saved/final invoice list.
+    const draftRecordsToKeep = existingRecords.filter((item) => {
+      if (item.invoiceLifecycle !== 'draft') {
+        return false;
+      }
+
+      const sameIncomingId = item.id && incomingIds.has(item.id);
+
+      const sameIncomingInvoiceNumber =
+        item.invoiceNumber && incomingInvoiceNumbers.has(item.invoiceNumber);
+
+      return !sameIncomingId && !sameIncomingInvoiceNumber;
+    });
+
+    const nextRecords = [
+      ...normalizedIncomingRecords,
+      ...draftRecordsToKeep,
+    ];
+
+    return await saveAllInvoiceRecords(nextRecords);
+  } catch (error) {
+    console.log('Bulk Save Invoices Error:', error);
+    return false;
+  }
 };
+
 
 // ======================================================
 // INVOICE SIDE: CLEAR FINAL/SAVED INVOICES ONLY

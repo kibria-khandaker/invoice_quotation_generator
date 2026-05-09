@@ -5,6 +5,7 @@ import {
   Animated,
   Dimensions,
   PanResponder,
+  ScrollView,
   TouchableOpacity,
   View,
   Text,
@@ -370,39 +371,54 @@ const handleNavigate = (routeName) => {
             </TouchableOpacity>
           </View>
 
-          {visibleMenuItems.map((item, index) => {
-            const isLast = index === visibleMenuItems.length - 1;
+          {/* ======================================================
+              FLOATING QUICK BUTTON MENU LIST
+              EDIT:
+              Header/close/drag area fixed থাকবে।
+              Menu item list scrollable হবে, যাতে বেশি menu item
+              add হলেও panel dangerous লম্বা না হয়।
+              Existing navigation/options logic unchanged.
+          ====================================================== */}
+          <ScrollView
+            style={styles.menuListScroll}
+            contentContainerStyle={styles.menuListContent}
+            showsVerticalScrollIndicator
+            nestedScrollEnabled
+          >
+            {visibleMenuItems.map((item, index) => {
+              const isLast = index === visibleMenuItems.length - 1;
 
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.86}
-                style={[
-                  styles.menuItem,
-                  isLast && styles.menuItemLast,
-                ]}
-                onPress={() => handleNavigate(item.route)}
-              >
-                <View style={styles.menuIconBox}>
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.86}
+                  style={[
+                    styles.menuItem,
+                    isLast && styles.menuItemLast,
+                  ]}
+                  onPress={() => handleNavigate(item.route)}
+                >
+                  <View style={styles.menuIconBox}>
+                    <Ionicons
+                      name={item.icon}
+                      size={15}
+                      color={FLOATING_BUTTON_BRAND_COLOR}
+                    />
+                  </View>
+
+                  <Text style={styles.menuItemText} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+
                   <Ionicons
-                    name={item.icon}
-                    size={15}
-                    color={FLOATING_BUTTON_BRAND_COLOR}
+                    name="chevron-forward"
+                    size={14}
+                    color="#98a2b3"
                   />
-                </View>
-
-                <Text style={styles.menuItemText} numberOfLines={1}>
-                  {item.title}
-                </Text>
-
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color="#98a2b3"
-                />
-              </TouchableOpacity>
-            );
-          })}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
       )}
 

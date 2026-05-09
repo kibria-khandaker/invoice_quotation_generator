@@ -13,10 +13,11 @@
 // - Final/ready save remains in InvoicePreviewScreen.
 // ======================================================
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Alert,
+  AppState,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -311,6 +312,139 @@ const addItemToInvoiceItems = (currentItems, newItem) => {
   return [...currentItems, newItem];
 };
 
+
+// ======================================================
+// INVOICE SIDE VALIDATION HELPERS
+// NEW:
+// Used only before Go Preview.
+// Draft save remains flexible because incomplete invoices
+// are allowed to be saved as Draft.
+// Quotation side validation is not touched.
+// ======================================================
+const safeTrim = (value) => {
+  return String(value || '').trim();
+};
+
+const isValidInvoiceItemForFinal = (item) => {
+  const name = safeTrim(item?.name);
+  const description = safeTrim(item?.description);
+  const quantity = parseFloat(item?.quantity);
+  const unitPrice = parseFloat(item?.unitPrice);
+
+  const hasItemText = Boolean(name || description);
+  const hasValidQuantity = !Number.isNaN(quantity) && quantity > 0;
+  const hasValidPrice = !Number.isNaN(unitPrice) && unitPrice > 0;
+
+  return hasItemText && hasValidQuantity && hasValidPrice;
+};
+
+const buildInvoiceValidationIssues = ({
+  invoiceForm,
+  invoiceItems,
+  totalAmount,
+}) => {
+  const issues = [];
+
+  if (!safeTrim(invoiceForm?.companyName)) {
+    issues.push('Company Name is required.');
+  }
+
+  if (!safeTrim(invoiceForm?.clientName) && !safeTrim(invoiceForm?.clientCompany)) {
+    issues.push('Client Name or Client Company is required.');
+  }
+
+  const validItems = Array.isArray(invoiceItems)
+    ? invoiceItems.filter(isValidInvoiceItemForFinal)
+    : [];
+
+  if (validItems.length === 0) {
+    issues.push('At least one valid item with name/description, quantity, and price is required.');
+  }
+
+  const safeTotal = parseFloat(totalAmount) || 0;
+
+  if (safeTotal <= 0) {
+    issues.push('Total Amount must be greater than 0.');
+  }
+
+  return issues;
+};
+
+const formatValidationIssues = (issues = []) => {
+  return issues.map((item, index) => `${index + 1}. ${item}`).join('\n');
+};
+
+
+// ======================================================
+// INVOICE SIDE UNSAVED CHANGE HELPERS
+// NEW:
+// Used for Back / leave protection only.
+// It compares current form with the initially loaded form,
+// so default presets do not count as unsaved changes.
+// Quotation side logic is not touched.
+// ======================================================
+const normalizeSnapshotText = (value) => {
+  return String(value ?? '').trim();
+};
+
+const normalizeSnapshotNumberText = (value, fallback = '0') => {
+  const text = String(value ?? fallback).trim();
+
+  if (text === '') {
+    return fallback;
+  }
+
+  return text;
+};
+
+const createUnsavedInvoiceSnapshot = (invoiceForm = {}, invoiceItems = []) => {
+  const normalizedItems = Array.isArray(invoiceItems)
+    ? invoiceItems.map((item) => ({
+        name: normalizeSnapshotText(item?.name),
+        description: normalizeSnapshotText(item?.description),
+        quantity: normalizeSnapshotNumberText(item?.quantity, '1'),
+        unitPrice: normalizeSnapshotNumberText(item?.unitPrice, '0'),
+      }))
+    : [];
+
+  return JSON.stringify({
+    companyName: normalizeSnapshotText(invoiceForm.companyName),
+    companyAddress: normalizeSnapshotText(invoiceForm.companyAddress),
+    companyEmail: normalizeSnapshotText(invoiceForm.companyEmail),
+    companyPhone: normalizeSnapshotText(invoiceForm.companyPhone),
+    logo: normalizeSnapshotText(invoiceForm.logo),
+    logoBase64: normalizeSnapshotText(invoiceForm.logoBase64),
+
+    clientName: normalizeSnapshotText(invoiceForm.clientName),
+    clientCompany: normalizeSnapshotText(invoiceForm.clientCompany),
+    clientEmail: normalizeSnapshotText(invoiceForm.clientEmail),
+    clientPhone: normalizeSnapshotText(invoiceForm.clientPhone),
+    clientAddress: normalizeSnapshotText(invoiceForm.clientAddress),
+
+    invoiceNumber: normalizeSnapshotText(invoiceForm.invoiceNumber),
+    invoiceDate: normalizeSnapshotText(invoiceForm.invoiceDate),
+    dueDate: normalizeSnapshotText(invoiceForm.dueDate),
+    referenceQuotationNumber: normalizeSnapshotText(
+      invoiceForm.referenceQuotationNumber
+    ),
+
+    discount: normalizeSnapshotNumberText(invoiceForm.discount, '0'),
+    tax: normalizeSnapshotNumberText(invoiceForm.tax, '0'),
+    paidAmount: normalizeSnapshotNumberText(invoiceForm.paidAmount, '0'),
+
+    paymentTerms: normalizeSnapshotText(invoiceForm.paymentTerms),
+    paymentMethod: normalizeSnapshotText(invoiceForm.paymentMethod),
+    mobilePaymentInfo: normalizeSnapshotText(invoiceForm.mobilePaymentInfo),
+
+    signatureImage: normalizeSnapshotText(invoiceForm.signatureImage),
+    signatureBase64: normalizeSnapshotText(invoiceForm.signatureBase64),
+
+    notes: normalizeSnapshotText(invoiceForm.notes),
+
+    invoiceItems: normalizedItems,
+  });
+};
+
 // ======================================================
 // INVOICE SIDE PRESET NORMALIZERS
 // These read existing Settings data safely.
@@ -508,13 +642,83 @@ export default function CreateInvoiceScreen({ navigation, route }) {
   const [selectedNoteTitle, setSelectedNoteTitle] = useState('');
 
   // ======================================================
+  // INVOICE SIDE UNSAVED PROTECTION REFS
+  // NEW:
+  // initialInvoiceSnapshotRef stores the form state after
+  // default preset / edit data load is complete.
+  // allowNavigationRef prevents our own confirmed navigation
+  // from being blocked again by beforeRemove.
+  // ======================================================
+  const initialInvoiceSnapshotRef = useRef(null);
+  const allowNavigationRef = useRef(false);
+
+  // ======================================================
+  // INVOICE SIDE AUTO DRAFT SAFETY REFS
+  // NEW:
+  // Used to save current draft work when the app goes
+  // inactive/background. It will not silently move saved
+  // History invoices to Draft.
+  // ======================================================
+  const appStateRef = useRef(AppState.currentState);
+  const autoSaveInProgressRef = useRef(false);
+
+  // ======================================================
   // INVOICE SIDE EDIT / CONTINUE MODE
   // NEW:
   // Used when opening a draft invoice from InvoiceDraftScreen.
   // Same ID is preserved to prevent duplicate draft records.
   // ======================================================
-  const editData = route?.params?.editData || null;
-  const isContinueDraftMode = Boolean(route?.params?.isDraft && editData);
+const editData = route?.params?.editData || null;
+const isContinueDraftMode = Boolean(route?.params?.isDraft && editData);
+
+// ======================================================
+// INVOICE SIDE SAVED EDIT MODE
+// NEW:
+// Used when opening a saved/final invoice from History.
+// This only changes UI labels/messages.
+// Storage movement still uses saveInvoiceDraft() / saveInvoice().
+// ======================================================
+const isSavedInvoiceEditMode = Boolean(route?.params?.isSaved && editData);
+
+const screenTitle = isContinueDraftMode
+  ? 'Continue Draft'
+  : isSavedInvoiceEditMode
+  ? 'Edit Invoice'
+  : 'Create Invoice';
+
+const screenSubtitle = isContinueDraftMode
+  ? 'Continue and update incomplete invoice'
+  : isSavedInvoiceEditMode
+  ? 'Edit saved invoice details'
+  : 'Create and manage professional invoices';
+
+const draftActionLabel = isContinueDraftMode
+  ? 'Update Draft'
+  : isSavedInvoiceEditMode
+  ? 'Move to Draft'
+  : 'Save as Draft';
+
+const draftAlertTitle = isSavedInvoiceEditMode
+  ? 'Move to Draft'
+  : 'Save as Draft';
+
+const draftAlertMessage = isContinueDraftMode
+  ? 'Do you want to update this draft invoice?'
+  : isSavedInvoiceEditMode
+  ? 'Do you want to move this saved invoice to draft? It will be removed from Invoice History and appear in Invoice Drafts.'
+  : 'Do you want to save this invoice as draft?';
+
+const draftAlertConfirmText = isContinueDraftMode
+  ? 'Update Draft'
+  : isSavedInvoiceEditMode
+  ? 'Move to Draft'
+  : 'Save Draft';
+
+const draftSuccessMessage = isContinueDraftMode
+  ? 'Invoice draft updated successfully.'
+  : isSavedInvoiceEditMode
+  ? 'Invoice moved to draft successfully.'
+  : 'Invoice draft saved successfully.';
 
   // ======================================================
   // INVOICE SIDE INIT
@@ -598,7 +802,7 @@ export default function CreateInvoiceScreen({ navigation, route }) {
       // Preserves id, invoiceNumber, createdAt, and invoiceItems.
       // ======================================================
       if (editData) {
-        setInvoiceForm({
+        const loadedInvoiceForm = {
           ...createEmptyInvoiceForm(),
           ...editData,
 
@@ -608,24 +812,27 @@ export default function CreateInvoiceScreen({ navigation, route }) {
           discount: String(editData.discountInput ?? editData.discount ?? '0'),
           tax: String(editData.taxInput ?? editData.tax ?? '0'),
           paidAmount: String(editData.paidAmount ?? '0'),
-        });
+        };
 
-        if (
+        const loadedInvoiceItems =
           Array.isArray(editData.invoiceItems) &&
           editData.invoiceItems.length > 0
-        ) {
-          setInvoiceItems(
-            editData.invoiceItems.map((item, index) => ({
-              id: item.id || `${Date.now()}-${index}`,
-              name: String(item.name || ''),
-              description: String(item.description || ''),
-              quantity: String(item.quantity || '1'),
-              unitPrice: String(item.unitPrice ?? '0'),
-            }))
-          );
-        } else {
-          setInvoiceItems([createEmptyInvoiceItem()]);
-        }
+            ? editData.invoiceItems.map((item, index) => ({
+                id: item.id || `${Date.now()}-${index}`,
+                name: String(item.name || ''),
+                description: String(item.description || ''),
+                quantity: String(item.quantity || '1'),
+                unitPrice: String(item.unitPrice ?? '0'),
+              }))
+            : [createEmptyInvoiceItem()];
+
+        setInvoiceForm(loadedInvoiceForm);
+        setInvoiceItems(loadedInvoiceItems);
+
+        initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+          loadedInvoiceForm,
+          loadedInvoiceItems
+        );
 
         setSelectedCompanyTitle(editData.companyName || '');
         setSelectedClientTitle(editData.clientName || editData.clientCompany || '');
@@ -648,71 +855,79 @@ export default function CreateInvoiceScreen({ navigation, route }) {
         return;
       }
 
-      setInvoiceForm((prev) => {
-        let nextForm = {
-          ...prev,
-          invoiceNumber: generatedInvoiceNumber || prev.invoiceNumber,
+      const freshEmptyForm = createEmptyInvoiceForm();
+
+      let defaultInvoiceForm = {
+        ...freshEmptyForm,
+        invoiceNumber: generatedInvoiceNumber || freshEmptyForm.invoiceNumber,
+      };
+
+      if (defaultCompany) {
+        defaultInvoiceForm = {
+          ...defaultInvoiceForm,
+          companyName: defaultCompany.companyName || '',
+          companyAddress: defaultCompany.companyAddress || '',
+          companyEmail: defaultCompany.companyEmail || '',
+          companyPhone: defaultCompany.companyPhone || '',
+          companyContact: buildCompanyContact(
+            defaultCompany.companyEmail,
+            defaultCompany.companyPhone
+          ),
+          logo: defaultCompany.logo || null,
+          logoBase64: defaultCompany.logoBase64 || null,
         };
+      }
 
-        if (defaultCompany) {
-          nextForm = {
-            ...nextForm,
-            companyName: defaultCompany.companyName || '',
-            companyAddress: defaultCompany.companyAddress || '',
-            companyEmail: defaultCompany.companyEmail || '',
-            companyPhone: defaultCompany.companyPhone || '',
-            companyContact: buildCompanyContact(
-              defaultCompany.companyEmail,
-              defaultCompany.companyPhone
-            ),
-            logo: defaultCompany.logo || null,
-            logoBase64: defaultCompany.logoBase64 || null,
-          };
-        }
+      if (defaultClient) {
+        defaultInvoiceForm = {
+          ...defaultInvoiceForm,
+          clientName: defaultClient.clientName || '',
+          clientCompany: defaultClient.clientCompany || '',
+          clientEmail: defaultClient.clientEmail || '',
+          clientPhone: defaultClient.clientPhone || '',
+          clientAddress: defaultClient.clientAddress || '',
+        };
+      }
 
-        if (defaultClient) {
-          nextForm = {
-            ...nextForm,
-            clientName: defaultClient.clientName || '',
-            clientCompany: defaultClient.clientCompany || '',
-            clientEmail: defaultClient.clientEmail || '',
-            clientPhone: defaultClient.clientPhone || '',
-            clientAddress: defaultClient.clientAddress || '',
-          };
-        }
+      if (defaultPayment) {
+        defaultInvoiceForm = {
+          ...defaultInvoiceForm,
+          paymentTerms: defaultPayment.paymentTerms || '',
+          paymentMethod: defaultPayment.paymentMethod || '',
+        };
+      }
 
-        if (defaultPayment) {
-          nextForm = {
-            ...nextForm,
-            paymentTerms: defaultPayment.paymentTerms || '',
-            paymentMethod: defaultPayment.paymentMethod || '',
-          };
-        }
+      if (defaultMobilePayment) {
+        defaultInvoiceForm = {
+          ...defaultInvoiceForm,
+          mobilePaymentInfo: defaultMobilePayment.mobilePaymentInfo || '',
+        };
+      }
 
-        if (defaultMobilePayment) {
-          nextForm = {
-            ...nextForm,
-            mobilePaymentInfo: defaultMobilePayment.mobilePaymentInfo || '',
-          };
-        }
+      if (defaultSignature) {
+        defaultInvoiceForm = {
+          ...defaultInvoiceForm,
+          signatureImage: defaultSignature.signatureImage || null,
+          signatureBase64: defaultSignature.signatureBase64 || null,
+        };
+      }
 
-        if (defaultSignature) {
-          nextForm = {
-            ...nextForm,
-            signatureImage: defaultSignature.signatureImage || null,
-            signatureBase64: defaultSignature.signatureBase64 || null,
-          };
-        }
+      if (defaultNote) {
+        defaultInvoiceForm = {
+          ...defaultInvoiceForm,
+          notes: defaultNote.notes || '',
+        };
+      }
 
-        if (defaultNote) {
-          nextForm = {
-            ...nextForm,
-            notes: defaultNote.notes || '',
-          };
-        }
+      const freshInvoiceItems = [createEmptyInvoiceItem()];
 
-        return nextForm;
-      });
+      setInvoiceForm(defaultInvoiceForm);
+      setInvoiceItems(freshInvoiceItems);
+
+      initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+        defaultInvoiceForm,
+        freshInvoiceItems
+      );
 
       if (defaultCompany) {
         setSelectedCompanyTitle(
@@ -894,6 +1109,25 @@ export default function CreateInvoiceScreen({ navigation, route }) {
     PAYMENT_STATUS_META[autoPaymentStatus] || PAYMENT_STATUS_META.unpaid;
 
   // ======================================================
+  // INVOICE SIDE UNSAVED CHANGE STATE
+  // NEW:
+  // True only when user changed something after initial load.
+  // Default presets alone will not trigger unsaved warning.
+  // ======================================================
+  const hasUnsavedInvoiceChanges = useMemo(() => {
+    if (!initialInvoiceSnapshotRef.current) {
+      return false;
+    }
+
+    const currentSnapshot = createUnsavedInvoiceSnapshot(
+      invoiceForm,
+      invoiceItems
+    );
+
+    return currentSnapshot !== initialInvoiceSnapshotRef.current;
+  }, [invoiceForm, invoiceItems]);
+
+  // ======================================================
   // INVOICE SIDE DATA BUILDER
   // NEW:
   // Builds a clean invoiceData object for InvoicePreview and Draft Save.
@@ -943,63 +1177,227 @@ export default function CreateInvoiceScreen({ navigation, route }) {
     };
   };
 
-  // ======================================================
-  // INVOICE SIDE PREVIEW ACTION
-  // NEW:
-  // Opens InvoicePreview screen with current invoiceData.
-  // Quotation PreviewScreen is not used or touched.
-  // ======================================================
-  const handlePreviewInvoice = () => {
-    navigation.navigate('InvoicePreview', {
-      invoiceData: buildInvoiceData(),
-    });
-  };
+// ======================================================
+// INVOICE SIDE PREVIEW ACTION
+// EDIT:
+// Go Preview now checks basic completion.
+// Draft save remains flexible and does not use strict validation.
+// ======================================================
+const handlePreviewInvoice = () => {
+  const validationIssues = buildInvoiceValidationIssues({
+    invoiceForm,
+    invoiceItems,
+    totalAmount,
+  });
 
-  // ======================================================
-  // INVOICE SIDE SAVE AS DRAFT ACTION
-  // EDIT:
-  // CreateInvoiceScreen is the working/editing screen.
-  // Incomplete invoice is saved as Draft from here.
-  // Final/ready save happens from InvoicePreviewScreen.
-  // Same ID updates existing draft, preventing duplicates.
-  // ======================================================
-  const handleSaveDraftInvoice = () => {
+  if (validationIssues.length > 0) {
     Alert.alert(
-      'Save as Draft',
-      isContinueDraftMode
-        ? 'Do you want to update this draft invoice?'
-        : 'Do you want to save this invoice as draft?',
+      'Incomplete Invoice',
+      `Please fix these before preview/final invoice:
+
+${formatValidationIssues(
+        validationIssues
+      )}`,
       [
         {
           text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: isContinueDraftMode ? 'Update Draft' : 'Save Draft',
-          onPress: async () => {
-            const success = await saveInvoiceDraft(buildInvoiceData());
-
-            if (success) {
-              Alert.alert(
-                'Saved',
-                isContinueDraftMode
-                  ? 'Invoice draft updated successfully.'
-                  : 'Invoice draft saved successfully.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => navigation.navigate('InvoiceDraft'),
-                  },
-                ]
-              );
-            } else {
-              Alert.alert('Error', 'Invoice draft could not be saved.');
-            }
-          },
+          text: draftActionLabel,
+          onPress: handleSaveDraftInvoice,
         },
       ]
     );
+
+    return;
+  }
+
+  navigation.navigate('InvoicePreview', {
+    invoiceData: buildInvoiceData(),
+  });
+};
+
+ // ======================================================
+// INVOICE SIDE SAVE AS DRAFT / MOVE TO DRAFT ACTION
+// EDIT:
+// - New invoice: Save as Draft
+// - Draft edit: Update Draft
+// - Saved invoice edit: Move to Draft
+//
+// Same ID is preserved by buildInvoiceData() and storageService,
+// so this does not create duplicate records.
+// ======================================================
+const handleSaveDraftInvoice = () => {
+  Alert.alert(
+    draftAlertTitle,
+    draftAlertMessage,
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: draftAlertConfirmText,
+        onPress: async () => {
+          const success = await saveInvoiceDraft(buildInvoiceData());
+
+          if (success) {
+            Alert.alert('Saved', draftSuccessMessage, [
+              {
+                text: 'OK',
+                onPress: () => {
+                  allowNavigationRef.current = true;
+                  initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+                    invoiceForm,
+                    invoiceItems
+                  );
+                  navigation.navigate('InvoiceDraft');
+                },
+              },
+            ]);
+          } else {
+            Alert.alert('Error', 'Invoice draft could not be saved.');
+          }
+        },
+      },
+    ]
+  );
+};
+
+// ======================================================
+// INVOICE SIDE UNSAVED LEAVE PROTECTION
+// NEW:
+// If user tries to leave CreateInvoiceScreen with changes,
+// show options:
+// - Leave Without Saving
+// - Save as Draft
+// - Cancel
+// Covers header back, navigation back, and Android hardware back
+// through React Navigation beforeRemove.
+// ======================================================
+const continueNavigationAfterConfirm = (action) => {
+  allowNavigationRef.current = true;
+  navigation.dispatch(action);
+
+  setTimeout(() => {
+    allowNavigationRef.current = false;
+  }, 700);
+};
+
+const saveDraftAndContinueNavigation = async (action) => {
+  const success = await saveInvoiceDraft(buildInvoiceData());
+
+  if (success) {
+    initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+      invoiceForm,
+      invoiceItems
+    );
+
+    continueNavigationAfterConfirm(action);
+  } else {
+    Alert.alert('Error', 'Invoice draft could not be saved.');
+  }
+};
+
+const showUnsavedLeaveAlert = (action) => {
+  Alert.alert(
+    'Unsaved Invoice',
+    'You have unsaved invoice changes. What do you want to do?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Leave Without Saving',
+        style: 'destructive',
+        onPress: () => continueNavigationAfterConfirm(action),
+      },
+      {
+        text: draftActionLabel,
+        onPress: () => saveDraftAndContinueNavigation(action),
+      },
+    ]
+  );
+};
+
+useEffect(() => {
+  const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+    if (allowNavigationRef.current || !hasUnsavedInvoiceChanges) {
+      return;
+    }
+
+    event.preventDefault();
+    showUnsavedLeaveAlert(event.data.action);
+  });
+
+  return unsubscribe;
+}, [navigation, hasUnsavedInvoiceChanges, draftActionLabel]);
+
+// ======================================================
+// INVOICE SIDE AUTO DRAFT SAFETY
+// NEW:
+// If the app goes inactive/background while user is working
+// on a new invoice or draft invoice, save the latest work as
+// Draft automatically. Saved invoice edit mode is skipped to
+// avoid silently moving a final History invoice into Draft.
+// ======================================================
+const autoSaveDraftBeforeBackground = async () => {
+  if (autoSaveInProgressRef.current) {
+    return;
+  }
+
+  if (!hasUnsavedInvoiceChanges) {
+    return;
+  }
+
+  if (isSavedInvoiceEditMode) {
+    return;
+  }
+
+  try {
+    autoSaveInProgressRef.current = true;
+
+    const success = await saveInvoiceDraft(buildInvoiceData());
+
+    if (success) {
+      initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+        invoiceForm,
+        invoiceItems
+      );
+    }
+  } catch (error) {
+    console.log('Invoice Auto Draft Save Error:', error);
+  } finally {
+    autoSaveInProgressRef.current = false;
+  }
+};
+
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (nextAppState) => {
+    const previousAppState = appStateRef.current;
+
+    const isLeavingActiveState =
+      previousAppState === 'active' &&
+      (nextAppState === 'inactive' || nextAppState === 'background');
+
+    if (isLeavingActiveState) {
+      autoSaveDraftBeforeBackground();
+    }
+
+    appStateRef.current = nextAppState;
+  });
+
+  return () => {
+    subscription.remove();
   };
+}, [
+  hasUnsavedInvoiceChanges,
+  isSavedInvoiceEditMode,
+  invoiceForm,
+  invoiceItems,
+]);
 
   const logoPreviewUri = getImageUri(invoiceForm.logo, invoiceForm.logoBase64);
 
@@ -1028,14 +1426,12 @@ export default function CreateInvoiceScreen({ navigation, route }) {
           </TouchableOpacity>
 
           <View style={styles.headerTitleWrap}>
-            <Text style={styles.headerTitle}>
-              {isContinueDraftMode ? 'Continue Draft' : 'Create Invoice'}
-            </Text>
-            <Text style={styles.headerSubtitle}>
-              {isContinueDraftMode
-                ? 'Continue and update incomplete invoice'
-                : 'Create and manage professional invoices'}
-            </Text>
+              <Text style={styles.headerTitle}>
+                {screenTitle}
+              </Text>
+              <Text style={styles.headerSubtitle}>
+                {screenSubtitle}
+              </Text>
           </View>
 
           <TouchableOpacity
@@ -1696,7 +2092,7 @@ export default function CreateInvoiceScreen({ navigation, route }) {
             />
 
             <ActionButton
-              title={isContinueDraftMode ? 'Update Draft' : 'Save as Draft'}
+              title={draftActionLabel}
               icon="bookmark-outline"
               outline
               onPress={handleSaveDraftInvoice}

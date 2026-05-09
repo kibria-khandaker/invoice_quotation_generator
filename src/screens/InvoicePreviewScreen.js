@@ -118,8 +118,74 @@ const getImageUri = (uri, base64) => {
   return null;
 };
 
+// ======================================================
+// INVOICE SIDE FINAL VALIDATION HELPERS
+// NEW:
+// Used before Save Invoice and Generate PDF.
+// Draft save remains handled from CreateInvoiceScreen.
+// Quotation side validation is not touched.
+// ======================================================
+const safeTrim = (value) => {
+  return String(value || '').trim();
+};
+
+const isValidInvoiceItemForFinal = (item) => {
+  const name = safeTrim(item?.name);
+  const description = safeTrim(item?.description);
+  const quantity = parseFloat(item?.quantity);
+  const unitPrice = parseFloat(item?.unitPrice);
+
+  const hasItemText = Boolean(name || description);
+  const hasValidQuantity = !Number.isNaN(quantity) && quantity > 0;
+  const hasValidPrice = !Number.isNaN(unitPrice) && unitPrice > 0;
+
+  return hasItemText && hasValidQuantity && hasValidPrice;
+};
+
+const buildInvoiceFinalValidationIssues = (invoiceData = {}) => {
+  const issues = [];
+
+  if (!safeTrim(invoiceData.companyName)) {
+    issues.push('Company Name is required.');
+  }
+
+  if (!safeTrim(invoiceData.clientName) && !safeTrim(invoiceData.clientCompany)) {
+    issues.push('Client Name or Client Company is required.');
+  }
+
+  const validItems = getInvoiceItems(invoiceData).filter(
+    isValidInvoiceItemForFinal
+  );
+
+  if (validItems.length === 0) {
+    issues.push('At least one valid item with name/description, quantity, and price is required.');
+  }
+
+  const totalAmount = parseFloat(
+    invoiceData.totalAmount ?? invoiceData.grandTotal ?? 0
+  ) || 0;
+
+  if (totalAmount <= 0) {
+    issues.push('Total Amount must be greater than 0.');
+  }
+
+  return issues;
+};
+
+const formatValidationIssues = (issues = []) => {
+  return issues.map((item, index) => `${index + 1}. ${item}`).join('\n');
+};
+
 export default function InvoicePreviewScreen({ navigation, route }) {
   const invoiceData = route?.params?.invoiceData || {};
+
+  // ======================================================
+  // INVOICE SIDE PREVIEW SOURCE FLAG
+  // NEW:
+  // If preview opened from History, Edit icon should open
+  // CreateInvoice edit mode. Otherwise it should go back.
+  // ======================================================
+  const fromHistory = Boolean(route?.params?.fromHistory);
 
   const invoiceItems = useMemo(() => {
     return getInvoiceItems(invoiceData);
@@ -156,13 +222,56 @@ export default function InvoicePreviewScreen({ navigation, route }) {
   );
 
 // ======================================================
+// INVOICE SIDE VALIDATION ALERT
+// NEW:
+// Used by Save Invoice and Generate PDF.
+// Gives user a direct edit option.
+// ======================================================
+const showFinalValidationAlert = (validationIssues = []) => {
+  Alert.alert(
+    'Incomplete Invoice',
+    `Please fix these before saving or generating PDF:\n\n${formatValidationIssues(
+      validationIssues
+    )}`,
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Go Edit',
+        onPress: () => {
+          if (fromHistory) {
+            navigation.navigate('CreateInvoice', {
+              editData: invoiceData,
+              isSaved: true,
+              fromHistory: true,
+            });
+
+            return;
+          }
+
+          navigation.goBack();
+        },
+      },
+    ]
+  );
+};
+
+// ======================================================
 // INVOICE SIDE FINAL SAVE ACTION
 // EDIT:
-// InvoicePreviewScreen is the decision/final review screen.
-// A complete invoice is saved as final/ready from here.
-// Draft save is handled from CreateInvoiceScreen.
+// Save Invoice now validates final/ready invoice data.
+// Incomplete invoices should be saved as Draft from CreateInvoiceScreen.
 // ======================================================
 const handleSaveInvoice = () => {
+  const validationIssues = buildInvoiceFinalValidationIssues(invoiceData);
+
+  if (validationIssues.length > 0) {
+    showFinalValidationAlert(validationIssues);
+    return;
+  }
+
   Alert.alert(
     'Save Invoice',
     'Do you want to save this invoice as final/ready?',
@@ -194,11 +303,18 @@ const handleSaveInvoice = () => {
 
 // ======================================================
 // INVOICE SIDE PDF ACTION
-// NEW:
-// Generate and share Invoice PDF from preview screen.
-// Quotation PDF flow is not touched.
+// EDIT:
+// Generate PDF now validates final/ready invoice data.
+// This prevents empty/incomplete invoice PDF generation.
 // ======================================================
 const handleGeneratePDF = async () => {
+  const validationIssues = buildInvoiceFinalValidationIssues(invoiceData);
+
+  if (validationIssues.length > 0) {
+    showFinalValidationAlert(validationIssues);
+    return;
+  }
+
   try {
     const uri = await generateInvoicePDF(invoiceData);
 
@@ -217,6 +333,28 @@ const handleGeneratePDF = async () => {
     Alert.alert('PDF Error', 'Invoice PDF could not be generated.');
   }
 };
+
+// ======================================================
+// INVOICE SIDE PREVIEW EDIT ACTION
+// EDIT:
+// - CreateInvoice → Preview: Edit icon goes back to form.
+// - History → Preview: Edit icon opens CreateInvoice edit mode.
+// This keeps saved invoice ID and prevents duplicate records.
+// ======================================================
+const handleEditInvoice = () => {
+  if (fromHistory) {
+    navigation.navigate('CreateInvoice', {
+      editData: invoiceData,
+      isSaved: true,
+      fromHistory: true,
+    });
+
+    return;
+  }
+
+  navigation.goBack();
+};
+
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -252,7 +390,7 @@ const handleGeneratePDF = async () => {
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.headerIconButton}
-            onPress={() => navigation.goBack()}
+            onPress={handleEditInvoice}
           >
             <Ionicons name="create-outline" size={23} color="#ffffff" />
           </TouchableOpacity>

@@ -439,6 +439,13 @@ export default function InvoiceHistoryScreen({ navigation }) {
     setIsPageSizeDropdownOpen(false);
   };
 
+  // ======================================================
+  // INVOICE SIDE HISTORY → PREVIEW ACTION
+  // EDIT:
+  // When invoice is opened from History, pass fromHistory flag.
+  // InvoicePreviewScreen will use this to send Edit icon to
+  // CreateInvoice edit mode instead of simple goBack.
+  // ======================================================
   const handleOpenInvoice = (invoice) => {
     if (isSelectionMode) {
       handleToggleSelectInvoice(invoice);
@@ -447,6 +454,7 @@ export default function InvoiceHistoryScreen({ navigation }) {
 
     navigation.navigate('InvoicePreview', {
       invoiceData: invoice,
+      fromHistory: true,
     });
   };
 
