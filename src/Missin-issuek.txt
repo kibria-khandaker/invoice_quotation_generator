@@ -1,0 +1,81 @@
+Create Quotation page-এর একই পেইজের section/title অনুযায়ী field / option / action list:
+
+Create Quotation Page
+
+1. Header
+   Actions:
+   - Back
+   - History / Quotation History shortcut
+
+2. Company Information
+   Fields / Options:
+   - Upload Logo / Logo Preview
+   - Select Company dropdown
+   - Company Name
+   - Company Address
+   - Company Email
+   - Company Phone
+
+3. Bill To
+   Fields / Options:
+   - Select Client dropdown
+   - Client Name
+   - Client Company
+   - Client Email
+   - Client Phone
+   - Client Address
+
+4. Quotation Info
+   Fields / Options:
+   - Quotation Number
+   - Date
+   - Validity (1-30) days
+
+5. Items / Services
+   Fields / Options / Actions:
+   - Add Item button
+   - Item / Service Name
+   - Description
+   - Quantity
+   - Price / Unit Price
+   - Delete Item button
+
+6. Pricing Summary
+   Fields / Options:
+   - Subtotal
+   - Discount
+   - Tax (%)
+   - Total Amount
+
+7. Payment Terms
+   Fields / Options:
+   - Select Payment dropdown
+   - Payment Terms text area
+
+8. Payment Method
+   Fields / Options:
+   - Payment Method text area
+
+9. Mobile Payment Info
+   Fields / Options:
+   - Select Mobile dropdown
+   - Mobile Payment Info text area
+
+10. Signature
+   Fields / Options:
+   - Upload Signature / Signature Preview
+   - Select Signature dropdown
+   - Signature Line
+   - Authorized Signature label
+
+11. Notes
+   Fields / Options:
+   - Select Note dropdown
+   - Notes text area
+   - Static footer/disclaimer text
+
+12. Bottom Actions
+   Actions:
+   - Go to Preview
+   - Draft
+   - Update Quotation, only in edit mode

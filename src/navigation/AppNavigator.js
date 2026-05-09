@@ -23,8 +23,12 @@ import NotesSettingsScreen from '../screens/NotesSettingsScreen';
 import AboutUsScreen from '../screens/AboutUsScreen';
 import TermsConditionsScreen from '../screens/TermsConditionsScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+
 import CreateInvoiceScreen from '../screens/CreateInvoiceScreen';
+import InvoiceDraftScreen from '../screens/InvoiceDraftScreen';
+import InvoicePreviewScreen from '../screens/InvoicePreviewScreen';
 import InvoiceHistoryScreen from '../screens/InvoiceHistoryScreen';
+
 import DraftQuotationScreen from '../screens/DraftQuotationScreen';
 
 
@@ -114,13 +118,25 @@ export default function AppNavigator() {
         <Stack.Screen
           name="CreateInvoice"
           component={CreateInvoiceScreen}
-          options={{ title: 'Create Invoice' }}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="InvoicePreview"
+          component={InvoicePreviewScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <Stack.Screen
+          name="InvoiceDraft"
+          component={InvoiceDraftScreen}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="InvoiceHistory"
           component={InvoiceHistoryScreen}
-          options={{ title: 'Invoice History' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen

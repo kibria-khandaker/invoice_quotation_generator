@@ -87,6 +87,23 @@ const SETTING_ITEMS = [
     accentColor: '#ec4899',
     iconGradient: ['#ffe3f2', '#ffd5eb'],
   },
+
+  // ======================================================
+  // INVOICE SIDE SETTINGS MENU
+  // NEW:
+  // Opens InvoiceDraftScreen and shows only draft invoices.
+  // Quotation Draft menu above is not touched.
+  // ======================================================
+  {
+    id: 'invoice-drafts',
+    title: 'Invoice Drafts',
+    subtitle: 'Continue incomplete draft invoices later.',
+    icon: 'document-text-outline',
+    route: 'InvoiceDraft',
+    accentColor: '#f97316',
+    iconGradient: ['#fff0df', '#ffe3c7'],
+  },
+
   {
     id: 'floating-quick-button',
     title: 'Floating Quick Button',
