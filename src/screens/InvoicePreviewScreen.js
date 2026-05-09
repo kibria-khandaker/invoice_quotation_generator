@@ -23,11 +23,15 @@ import {
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+import * as Sharing from 'expo-sharing';
+
 import styles from './InvoicePreviewScreenStyle';
 import { saveInvoice } from '../services/storageService';
+import { generateInvoicePDF } from '../services/pdfService';
 
 const BRAND_COLOR = '#fd4475';
 
@@ -188,12 +192,31 @@ const handleSaveInvoice = () => {
   );
 };
 
-  const handleGeneratePDF = () => {
-    Alert.alert(
-      'Generate PDF',
-      'PDF generation will be connected in the next phase after invoice save/storage is ready.'
-    );
-  };
+// ======================================================
+// INVOICE SIDE PDF ACTION
+// NEW:
+// Generate and share Invoice PDF from preview screen.
+// Quotation PDF flow is not touched.
+// ======================================================
+const handleGeneratePDF = async () => {
+  try {
+    const uri = await generateInvoicePDF(invoiceData);
+
+    const sharingAvailable = await Sharing.isAvailableAsync();
+
+    if (sharingAvailable) {
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: `Share Invoice ${invoiceData.invoiceNumber || ''}`,
+      });
+    } else {
+      Alert.alert('PDF Ready', `PDF file saved at: ${uri}`);
+    }
+  } catch (error) {
+    console.log('Invoice PDF Generation Error:', error);
+    Alert.alert('PDF Error', 'Invoice PDF could not be generated.');
+  }
+};
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

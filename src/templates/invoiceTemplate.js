@@ -525,8 +525,8 @@ export const generateInvoiceHTML = (data = {}) => {
             invoiceNumber
               ? `
                 <div class="meta-row">
-                  <p class="meta-label">Invoice No:</p>
-                  <p class="meta-value">${escapeHtml(invoiceNumber)}</p>
+                <p class="meta-value">${escapeHtml(invoiceNumber)}</p>
+                  <p class="meta-label">:Invoice No</p>
                 </div>
               `
               : ''
@@ -536,8 +536,8 @@ export const generateInvoiceHTML = (data = {}) => {
             invoiceDate
               ? `
                 <div class="meta-row">
-                  <p class="meta-label">Invoice Date:</p>
-                  <p class="meta-value">${escapeHtml(invoiceDate)}</p>
+                <p class="meta-value">${escapeHtml(invoiceDate)}</p>
+                  <p class="meta-label">:Invoice Date</p>
                 </div>
               `
               : ''
@@ -547,8 +547,8 @@ export const generateInvoiceHTML = (data = {}) => {
             dueDate
               ? `
                 <div class="meta-row">
-                  <p class="meta-label">Due Date:</p>
-                  <p class="meta-value">${escapeHtml(dueDate)}</p>
+                <p class="meta-value">${escapeHtml(dueDate)}</p>
+                  <p class="meta-label">:Due Date</p>
                 </div>
               `
               : ''
@@ -558,8 +558,8 @@ export const generateInvoiceHTML = (data = {}) => {
             referenceQuotationNumber
               ? `
                 <div class="meta-row">
-                  <p class="meta-label">Reference Quote:</p>
-                  <p class="meta-value">${escapeHtml(referenceQuotationNumber)}</p>
+                <p class="meta-value reference-quote-value">${escapeHtml(referenceQuotationNumber)}</p>
+                  <p class="meta-label reference-quote-label">:Reference Quote</p>
                 </div>
               `
               : ''
@@ -880,6 +880,11 @@ export const generateInvoiceHTML = (data = {}) => {
 
     .meta-row {
       margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      white-space: nowrap;
     }
 
     .meta-label {
@@ -887,13 +892,26 @@ export const generateInvoiceHTML = (data = {}) => {
       font-size: ${config.smallFont}px;
       line-height: 1.02;
       font-weight: 900;
+      color: #111827;
     }
 
     .meta-value {
       margin: 0;
       font-size: ${config.smallFont}px;
       line-height: 1.02;
-      font-weight: 700;
+      font-weight: 800;
+      color: #111827;
+      text-align: right;
+    }
+
+    .reference-quote-label {
+      color: #fd4475;
+      font-weight: 900;
+    }
+
+    .reference-quote-value {
+      color: #fd4475;
+      font-weight: 900;
     }
 
     .status-badge {

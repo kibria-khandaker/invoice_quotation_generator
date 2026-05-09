@@ -30,6 +30,7 @@ import {
   View,
 } from 'react-native';
 
+import JSZip from 'jszip';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,6 +42,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 
 import styles from './InvoiceHistoryScreenStyle';
+import { generateInvoicePDF } from '../services/pdfService';
 
 import {
   deleteInvoice,
@@ -257,6 +259,31 @@ const createKeepBothInvoiceId = (index = 0) => {
   )}`;
 };
 
+// ======================================================
+// INVOICE SIDE PDF HELPERS
+// NEW:
+// Used by single card PDF and selected multi-PDF export.
+// Quotation side PDF logic is not touched.
+// ======================================================
+const sanitizeFileName = (value = 'Invoice') => {
+  const cleaned = String(value || 'Invoice')
+    .replace(/[^a-zA-Z0-9-_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return cleaned || 'Invoice';
+};
+
+const getInvoicePdfFileName = (invoice = {}, index = 0) => {
+  const invoiceNumber = sanitizeFileName(
+    invoice?.invoiceNumber || `Invoice_${index + 1}`
+  );
+
+  const clientName = sanitizeFileName(getClientDisplayName(invoice));
+
+  return `${invoiceNumber}_${clientName}.pdf`;
+};
+
 export default function InvoiceHistoryScreen({ navigation }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -431,13 +458,33 @@ export default function InvoiceHistoryScreen({ navigation }) {
     });
   };
 
-  const handleGeneratePdf = (invoice) => {
-    Alert.alert(
-      'Generate PDF',
-      `PDF generation for ${
-        invoice?.invoiceNumber || 'this invoice'
-      } will be connected in the PDF phase.`
-    );
+  // ======================================================
+  // INVOICE SIDE SINGLE PDF ACTION
+  // NEW:
+  // History card PDF button now generates and shares real invoice PDF.
+  // Quotation PDF flow is not touched.
+  // ======================================================
+  const handleGeneratePdf = async (invoice) => {
+    try {
+      setLoading(true);
+
+      const uri = await generateInvoicePDF(invoice);
+      const sharingAvailable = await Sharing.isAvailableAsync();
+
+      if (sharingAvailable) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Share Invoice ${invoice?.invoiceNumber || ''}`,
+        });
+      } else {
+        Alert.alert('PDF Ready', `PDF file saved at: ${uri}`);
+      }
+    } catch (error) {
+      console.log('Invoice PDF Export Error:', error);
+      Alert.alert('PDF Error', 'Invoice PDF could not be generated.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteInvoice = (invoice) => {
@@ -575,65 +622,134 @@ export default function InvoiceHistoryScreen({ navigation }) {
     });
   };
 
-const handleSelectCurrentPage = () => {
-  const currentPageIds = Array.from(
-    new Set(
-      paginatedInvoices
-        .map(getInvoiceSelectionId)
-        .filter(Boolean)
-    )
-  );
+  const handleSelectCurrentPage = () => {
+    const currentPageIds = Array.from(
+      new Set(
+        paginatedInvoices
+          .map(getInvoiceSelectionId)
+          .filter(Boolean)
+      )
+    );
 
-  if (currentPageIds.length === 0) {
-    Alert.alert('No Items', 'There are no invoices on this page to select.');
-    return;
-  }
+    if (currentPageIds.length === 0) {
+      Alert.alert('No Items', 'There are no invoices on this page to select.');
+      return;
+    }
 
-  setIsSelectionMode(true);
+    setIsSelectionMode(true);
 
-  // INVOICE SIDE SELECT:
-  // Always replace previous selection.
-  // This allows Select All active → Select Page override.
-  setSelectedInvoiceIds(() => currentPageIds);
-};
-
-const handleSelectAllHistory = () => {
-  const filteredInvoiceIds = Array.from(
-    new Set(
-      filteredInvoices
-        .map(getInvoiceSelectionId)
-        .filter(Boolean)
-    )
-  );
-
-  if (filteredInvoiceIds.length === 0) {
-    Alert.alert('No Items', 'There are no filtered/saved invoices to select.');
-    return;
-  }
-
-  setIsSelectionMode(true);
-
-  // INVOICE SIDE SELECT:
-  // Always replace previous selection.
-  // This allows Select Page active → Select All override.
-  setSelectedInvoiceIds(() => filteredInvoiceIds);
-};
-
-  const handleClearSelection = () => {
-    setSelectedInvoiceIds([]);
-    setIsSelectionMode(false);
+    // INVOICE SIDE SELECT:
+    // Always replace previous selection.
+    // This allows Select All active → Select Page override.
+    setSelectedInvoiceIds(() => currentPageIds);
   };
 
-  const handleExportSelectedInvoicePdfs = () => {
+  const handleSelectAllHistory = () => {
+    const filteredInvoiceIds = Array.from(
+      new Set(
+        filteredInvoices
+          .map(getInvoiceSelectionId)
+          .filter(Boolean)
+      )
+    );
+
+    if (filteredInvoiceIds.length === 0) {
+      Alert.alert('No Items', 'There are no filtered/saved invoices to select.');
+      return;
+    }
+
+    setIsSelectionMode(true);
+
+    // INVOICE SIDE SELECT:
+    // Always replace previous selection.
+    // This allows Select Page active → Select All override.
+    setSelectedInvoiceIds(() => filteredInvoiceIds);
+  };
+
+    const handleClearSelection = () => {
+      setSelectedInvoiceIds([]);
+      setIsSelectionMode(false);
+    };
+
+  // ======================================================
+  // INVOICE SIDE SELECTED PDF EXPORT
+  // NEW:
+  // - 1 selected invoice = direct PDF share
+  // - 2+ selected invoices = ZIP bundle share
+  // Follows the working Quotation History PDF bundle pattern.
+  // ======================================================
+  const handleExportSelectedInvoicePdfs = async () => {
     if (selectedInvoiceIds.length === 0) {
       Alert.alert('No Selection', 'Please select at least one invoice.');
       return;
     }
 
-    Alert.alert(
-      'Export Selected PDFs',
-      'Invoice selected PDF export will be connected in the PDF phase.'
+    const selectedInvoices = invoices.filter((item) =>
+      selectedInvoiceIds.includes(getInvoiceSelectionId(item))
     );
+
+    if (selectedInvoices.length === 0) {
+      Alert.alert('No Selection', 'Selected invoice data could not be found.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const sharingAvailable = await Sharing.isAvailableAsync();
+
+      if (selectedInvoices.length === 1) {
+        const invoice = selectedInvoices[0];
+        const uri = await generateInvoicePDF(invoice);
+
+        if (sharingAvailable) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `Share Invoice ${invoice?.invoiceNumber || ''}`,
+          });
+        } else {
+          Alert.alert('PDF Ready', `PDF file saved at: ${uri}`);
+        }
+
+        return;
+      }
+
+      const zip = new JSZip();
+
+      for (let index = 0; index < selectedInvoices.length; index += 1) {
+        const invoice = selectedInvoices[index];
+        const uri = await generateInvoicePDF(invoice);
+
+        const base64Data = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        zip.file(getInvoicePdfFileName(invoice, index), base64Data, {
+          base64: true,
+        });
+      }
+
+      const zipBase64 = await zip.generateAsync({ type: 'base64' });
+      const zipUri = `${FileSystem.cacheDirectory}Invoices_Bundle_${Date.now()}.zip`;
+
+      await FileSystem.writeAsStringAsync(zipUri, zipBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      if (sharingAvailable) {
+        await Sharing.shareAsync(zipUri, {
+          mimeType: 'application/zip',
+          dialogTitle: `Share ${selectedInvoices.length} Invoices`,
+        });
+      } else {
+        Alert.alert('ZIP Ready', `ZIP file saved at: ${zipUri}`);
+      }
+    } catch (error) {
+      console.log('Invoice Selected PDF Export Error:', error);
+      Alert.alert('Export Error', 'Selected invoice PDFs could not be exported.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteSelectedInvoices = () => {
