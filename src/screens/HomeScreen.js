@@ -8,7 +8,6 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,8 +15,6 @@ import styles from './HomeScreenStyles';
 
 const BRAND_COLOR = '#fd4475';
 
-const APP_VERSION = Constants.expoConfig?.version || '1.0.0';
-const BUILD_VERSION = Constants.expoConfig?.android?.versionCode || '1';
 
 const MAIN_MENU_ITEMS = [
   {
@@ -87,7 +84,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff0f5" />
 
       <ScrollView
@@ -189,22 +186,20 @@ export default function HomeScreen({ navigation }) {
               style={styles.quickLink}
               onPress={() => handleNavigate(item.route)}
             >
-              <Ionicons name={item.icon} size={22} color={BRAND_COLOR} />
-              <Text style={styles.quickLinkText} numberOfLines={2}>
+              <Ionicons name={item.icon} size={19} color={BRAND_COLOR} />
+              <Text
+                style={styles.quickLinkText}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.82}
+              >
                 {item.title}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerLine} />
-          <Text style={styles.versionText}>
-            Version {APP_VERSION}
-            {/* • Build {BUILD_VERSION} */}
-          </Text>
-        </View>
+        {/* Version text moved to AboutUsScreen. */}
       </ScrollView>
     </SafeAreaView>
   );

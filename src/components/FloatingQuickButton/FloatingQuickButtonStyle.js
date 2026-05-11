@@ -7,7 +7,7 @@ export const FLOATING_BUTTON_BRAND_COLOR = '#fd4475';
 const styles = StyleSheet.create({
   floatingRoot: {
     position: 'absolute',
-    width: 220,
+    width: 245,
     zIndex: 99999,
     elevation: 99999,
   },
@@ -32,17 +32,17 @@ const styles = StyleSheet.create({
   },
 
   menuHeaderRow: {
-    minHeight: 30,
-    borderRadius: 11,
+    minHeight: 36,
+    borderRadius: 12,
     backgroundColor: '#fff7fa',
-    paddingHorizontal: 8,
-    marginBottom: 6,
+    paddingHorizontal: 10,
+    marginBottom: 7,
     flexDirection: 'row',
     alignItems: 'center',
   },
  
   menuListScroll: {
-    maxHeight: 314,
+    maxHeight: 360,
   },
 
   menuListContent: {
@@ -55,16 +55,16 @@ const styles = StyleSheet.create({
 
   menuTitle: {
     flex: 1,
-    fontSize: 11.5,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '900',
     color: '#667085',
   },
 
   menuCloseButton: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: '#fff0f5',
     alignItems: 'center',
     justifyContent: 'center',
@@ -73,14 +73,14 @@ const styles = StyleSheet.create({
   },
 
   menuItem: {
-    minHeight: 34,
-    borderRadius: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    minHeight: 42,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff7fa',
-    marginBottom: 5,
+    marginBottom: 6,
   },
 
   menuItemLast: {
@@ -88,19 +88,19 @@ const styles = StyleSheet.create({
   },
 
   menuIconBox: {
-    width: 25,
-    height: 25,
-    borderRadius: 9,
+    width: 31,
+    height: 31,
+    borderRadius: 10,
     backgroundColor: '#fff0f5',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 7,
+    marginRight: 9,
   },
 
   menuItemText: {
     flex: 1,
-    fontSize: 11.5,
-    lineHeight: 15,
+    fontSize: 13.2,
+    lineHeight: 17,
     fontWeight: '900',
     color: '#111827',
   },

@@ -18,7 +18,9 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingBottom: 20,
+    // Extra bottom space keeps the last Settings menu visible
+    // above Android navigation bar and floating quick button.
+    paddingBottom: 120,
   },
 
   // ======================================================

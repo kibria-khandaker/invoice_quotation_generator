@@ -16,7 +16,8 @@ const styles = StyleSheet.create({
   },
 
   scrollContent: {
-    paddingBottom: 10,
+    // Keeps footer quick links above Android navigation bar.
+    paddingBottom: 20,
   },
 
   header: {
@@ -279,8 +280,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingTop: 4,
+    paddingHorizontal: 8,
+    paddingTop: 2,
+    paddingBottom: 4,
     marginTop: 0,
   },
 
@@ -288,14 +290,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 3,
-    paddingVertical: 6,
+    paddingHorizontal: 2,
+    paddingVertical: 3,
   },
 
   quickLinkText: {
-    marginTop: 4,
-    fontSize: 10.8,
-    lineHeight: 14,
+    marginTop: 3,
+    fontSize: 9.6,
+    lineHeight: 12,
     color: '#6b7280',
     fontWeight: '700',
     textAlign: 'center',

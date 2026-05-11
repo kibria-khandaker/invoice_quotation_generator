@@ -142,19 +142,19 @@ export default function AppNavigator() {
         <Stack.Screen
           name="AboutUs"
           component={AboutUsScreen}
-          options={{ title: 'About Us' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="TermsConditions"
           component={TermsConditionsScreen}
-          options={{ title: 'Terms & Conditions' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="PrivacyPolicy"
           component={PrivacyPolicyScreen}
-          options={{ title: 'Privacy Policy' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen

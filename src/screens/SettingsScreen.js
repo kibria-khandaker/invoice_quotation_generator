@@ -117,7 +117,7 @@ const SETTING_ITEMS = [
 
 export default function SettingsScreen({ navigation }) {
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff5f8" />
 
       <LinearGradient

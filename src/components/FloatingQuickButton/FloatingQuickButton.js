@@ -351,7 +351,7 @@ const handleNavigate = (routeName) => {
           >
             <Ionicons
               name="move-outline"
-              size={15}
+              size={17}
               color="#98a2b3"
               style={styles.menuDragIcon}
             />
@@ -365,7 +365,7 @@ const handleNavigate = (routeName) => {
             >
               <Ionicons
                 name="close"
-                size={16}
+                size={18}
                 color={FLOATING_BUTTON_BRAND_COLOR}
               />
             </TouchableOpacity>
@@ -401,7 +401,7 @@ const handleNavigate = (routeName) => {
                   <View style={styles.menuIconBox}>
                     <Ionicons
                       name={item.icon}
-                      size={15}
+                      size={17}
                       color={FLOATING_BUTTON_BRAND_COLOR}
                     />
                   </View>
@@ -412,7 +412,7 @@ const handleNavigate = (routeName) => {
 
                   <Ionicons
                     name="chevron-forward"
-                    size={14}
+                    size={16}
                     color="#98a2b3"
                   />
                 </TouchableOpacity>

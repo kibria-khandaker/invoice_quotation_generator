@@ -1321,17 +1321,3 @@ The quotation side is mostly complete and stable. The next major development goa
 
 Once the invoice generator module is complete, this app will become a complete mobile business document generator for both quotations and invoices.
 ```
-
-
-title: 'Company Information',
-title: 'Client Profiles',
-title: 'Items Catalog',
-title: 'Payment Terms & Method',
-title: 'Mobile Payment Info',
-title: 'Signature',
-title: 'Notes',
-title: 'Quotations Drafts',
-title: 'Invoice Drafts',
-title: 'Floating Quick Button',
-
-'Company Information','Client Profiles','Items Catalog','Payment Terms & Method','Mobile Payment Info','Signature','Notes','Quotations Drafts','Invoice Drafts','Floating Quick Button',
