@@ -1,8 +1,8 @@
 # Invoice & Quotation Generator App
 
-A professional mobile application for creating, previewing, saving, exporting, and managing quotations and invoices.
+A professional mobile application for creating, previewing, saving, updating, exporting, importing, backing up, and managing quotations and invoices.
 
-Built with **Expo**, **React Native**, and **AsyncStorage**, this app is designed for freelancers, agencies, small businesses, shops, service providers, and individuals who need a fast, mobile-friendly, and offline-first business document generator.
+Built with **Expo**, **React Native**, **AsyncStorage**, and an offline-first local storage approach, this app is designed for freelancers, agencies, small businesses, shops, service providers, and individuals who need a fast, mobile-friendly business document generator.
 
 ---
 
@@ -10,20 +10,81 @@ Built with **Expo**, **React Native**, and **AsyncStorage**, this app is designe
 
 The **Invoice & Quotation Generator App** helps users create professional business documents directly from a mobile device.
 
-The app currently has a mostly completed and stable **Quotation Generator** module. The next major development goal is to build the **Invoice Generator** module using the same workflow, structure, and design approach while keeping the existing quotation system safe and unchanged.
+The app currently supports both:
 
-The application is designed to support:
+- Quotation creation and management
+- Invoice creation and management
+- Draft saving and continuation
+- History management
+- PDF generation and sharing
+- CSV backup and import
+- Reusable settings/preset data
+- Floating quick actions
+- About, Terms & Conditions, and Privacy Policy pages
 
-- Quotation creation
-- Quotation preview
-- Quotation PDF generation
-- Quotation history management
-- Draft quotation management
-- Settings/preset management
-- Invoice creation
-- Invoice preview
-- Invoice PDF generation
-- Invoice history management
+The project has been developed carefully using a safe, phase-by-phase workflow so that new Invoice features do not break existing Quotation features.
+
+---
+
+## ✅ Current Project Status
+
+```text
+Status: Active Development
+
+Core Quotation Flow: Complete
+Core Invoice Flow: Complete
+Settings Preset Backup: Complete
+Draft / History / PDF Flow: Stable
+Mobile UI Polish: Ongoing
+```
+
+Completed major modules:
+
+```text
+✅ Quotation Generator
+✅ Quotation Preview
+✅ Quotation PDF Generation
+✅ Quotation History
+✅ Quotation Drafts
+✅ Quotation Validation
+✅ Quotation Unsaved Protection
+✅ Quotation Auto Draft
+✅ Quotation Draft → Final Save Cleanup
+
+✅ Invoice Generator
+✅ Invoice Preview
+✅ Invoice PDF Generation
+✅ Invoice History
+✅ Invoice Drafts
+✅ Invoice Validation
+✅ Invoice Unsaved Protection
+✅ Invoice Auto Draft
+✅ Invoice Draft → Final Save Flow
+✅ Invoice Move to Draft Flow
+✅ Invoice Edit Mode Update Flow
+
+✅ Settings Preset Management
+✅ Settings CSV Export / Import
+✅ Settings Conflict Handling
+✅ Floating Quick Button
+✅ About Page
+✅ Terms & Conditions Page
+✅ Privacy Policy Page
+```
+
+Optional future work:
+
+```text
+⬜ Quotation Draft CSV Backup / Import
+⬜ Invoice Draft CSV Backup / Import
+⬜ Currency customization
+⬜ Cloud backup
+⬜ Authentication
+⬜ Multi-language support
+⬜ Dark mode
+⬜ Reports / analytics
+⬜ Production build testing
+```
 
 ---
 
@@ -31,9 +92,7 @@ The application is designed to support:
 
 ### 🧾 Quotation Generator
 
-The quotation generator module is the main completed part of the application.
-
-Current quotation features include:
+Quotation features include:
 
 - Create detailed quotations
 - Add company information
@@ -51,46 +110,168 @@ Current quotation features include:
 - Add notes
 - Add company logo
 - Add authorized signature
+- Load saved company preset
+- Load saved client preset
+- Load saved item catalog data
+- Load saved payment preset
+- Load saved mobile payment preset
+- Load saved signature preset
+- Load saved notes preset
+- Validate quotation before preview/save/PDF
+- Save incomplete quotation as draft
+- Continue quotation draft editing
+- Auto-save meaningful quotation draft when app goes background
+- Protect unsaved quotation changes
 - Preview quotation before saving
 - Save quotation locally
-- Generate professional quotation PDF
+- Update saved quotation
+- Generate quotation PDF
 - Share generated PDF
-- View saved quotation history
+- View quotation history
 - Edit saved quotations
 - Delete saved quotations
-- Export selected quotations
-- Backup and import quotation data
+- Export selected quotation PDFs
+- Export multiple quotation PDFs as ZIP
+- Export selected quotation CSV backup
+- Export full quotation backup
+- Export filtered quotation backup
+- Import quotation CSV backup
+- Conflict handling during import
+- Search, filter, sort, and paginate quotation history
+- Select quotation draft cards
+- Delete selected quotation drafts
+- Clear all quotation drafts
 
 ---
 
-### 🧾 Planned Invoice Generator
+### 🧾 Invoice Generator
 
-The invoice generator module will follow the same structure and workflow as the quotation generator module.
+Invoice features include:
 
-Planned invoice features include:
-
-- Create invoices
+- Create detailed invoices
 - Add company information
 - Add client / bill-to information
-- Add invoice items
+- Add invoice number
 - Add invoice date
 - Add due date
-- Add payment information
+- Add reference quotation number
+- Add item/service rows
+- Add item description
+- Add quantity and unit price
+- Automatic subtotal calculation
+- Discount support
+- Tax percentage support
+- Grand total calculation
+- Add payment terms
+- Add payment method
+- Add mobile payment information
 - Add notes
-- Add signature
-- Preview invoice
-- Save invoice
+- Add company logo
+- Add authorized signature
+- Add payment status
+- Show payment status badge in invoice PDF
+- Load saved company preset
+- Load saved client preset
+- Load saved item catalog data
+- Load saved payment preset
+- Load saved mobile payment preset
+- Load saved signature preset
+- Load saved notes preset
+- Validate invoice before preview/save/PDF
+- Save incomplete invoice as draft
+- Continue invoice draft editing
+- Auto-save meaningful invoice draft when app goes background
+- Protect unsaved invoice changes
+- Preview invoice before saving
+- Save invoice locally
+- Update saved invoice
 - Generate invoice PDF
+- Share generated PDF
 - View invoice history
 - Edit saved invoice
-- Delete saved invoice
-- Export invoice PDF
+- Move invoice to draft when needed
+- Delete invoice
+- Export selected invoice PDFs
+- Export multiple invoice PDFs as ZIP
+- Export invoice CSV backup
+- Import invoice CSV backup
+- Preserve invoice drafts during CSV import
+- Conflict handling during import
+- Search, filter, sort, and paginate invoice history
+- Select invoice draft cards
+- Delete selected invoice drafts
+- Clear all invoice drafts
+
+---
+
+## 🔁 Common Quotation & Invoice Flow
+
+Quotation and Invoice follow a similar business document workflow.
+
+### Create Screen Flow
+
+```text
+Create Screen
+  ├── Fill company/client/items/payment data
+  ├── Save as Draft
+  ├── Go to Preview
+  └── Update existing record when opened from History edit mode
+```
+
+### Preview Screen Flow
+
+```text
+Preview Screen
+  ├── Edit / Go Back
+  ├── Save final document
+  ├── Update existing document
+  └── Generate PDF
+```
+
+### History Screen Flow
+
+```text
+History Screen
+  ├── Search
+  ├── Reset
+  ├── Filter
+  ├── Sort
+  ├── Select
+  ├── Export selected PDFs
+  ├── Export selected CSV
+  ├── Full backup
+  ├── Import CSV
+  ├── Pagination
+  └── Card actions:
+      ├── View
+      ├── Edit
+      ├── PDF
+      └── Delete
+```
+
+### Draft Screen Flow
+
+```text
+Draft Screen
+  ├── Search
+  ├── Reset / Refresh
+  ├── Select
+  ├── Delete selected
+  ├── Clear all
+  └── Card actions:
+      ├── Continue Editing
+      └── Delete
+```
+
+Draft pages intentionally avoid direct final preview actions. Users should continue editing first, then use the Create screen validation and Preview button.
 
 ---
 
 ## 🔢 Automatic Document Numbering
 
-The app supports automatic quotation numbering using a date-based format.
+The app supports automatic document numbering.
+
+### Quotation Number Format
 
 Example format:
 
@@ -116,37 +297,42 @@ Breakdown:
 └──────────── Day
 ```
 
-Planned invoice number format can follow the same idea:
+### Invoice Number Format
+
+Example format:
 
 ```text
 DDMMYYI1001
 ```
 
-Example:
+Example output:
 
 ```text
 150426I1001
 ```
 
-Where:
+Breakdown:
 
 ```text
 I = Invoice
 ```
 
+Quotation and invoice numbering are kept separate.
+
 ---
 
-## 👀 Quotation Preview
+## 👀 Preview System
 
-Before saving or exporting, users can preview the full quotation inside the app.
+Before saving or exporting, users can preview the full quotation or invoice inside the app.
 
 Preview includes:
 
 - Company information
 - Client information
-- Quotation number
+- Document number
 - Date
-- Validity
+- Validity / due date
+- Reference quotation number for invoice
 - Item/service list
 - Subtotal
 - Discount
@@ -158,13 +344,110 @@ Preview includes:
 - Notes
 - Logo
 - Signature
+- Payment status where applicable
 
-The preview screen supports different modes such as:
+Preview screens support different modes:
 
-- Create mode
-- History view mode
-- History edit/update mode
-- Draft preview mode
+```text
+Create preview mode
+History view mode
+History edit/update mode
+Draft final save mode
+```
+
+---
+
+## ✅ Validation System
+
+Both Quotation and Invoice include validation before final save or PDF generation.
+
+Validation checks include:
+
+- Company name is required
+- Client name or client company is required
+- At least one valid item/service is required
+- Item/service must have name or description
+- Quantity must be greater than 0
+- Price must be greater than 0
+- Total amount must be greater than 0
+
+Draft saving remains flexible:
+
+```text
+Empty form = draft blocked
+Partial form = draft allowed
+Complete form = preview/save/PDF allowed
+```
+
+This protects users from generating incomplete final business documents while still allowing unfinished work to be saved safely.
+
+---
+
+## 📝 Draft System
+
+The app supports drafts for both quotations and invoices.
+
+Draft features include:
+
+- Save incomplete form as draft
+- Prevent fully empty draft saving
+- Continue editing saved drafts
+- Update same draft instead of creating duplicates
+- Select draft cards
+- Delete selected drafts
+- Clear all drafts
+- Auto-save meaningful draft data when app goes background
+- Unsaved leave protection
+- Draft cleanup after successful final save
+
+Draft rules:
+
+```text
+Empty form = draft will not be saved
+Partial form = draft can be saved
+Draft data = stored separately from final saved records
+Final save from draft = draft cleanup after successful save
+```
+
+---
+
+## 🗂️ History System
+
+Saved quotations and invoices are stored locally and managed from their history screens.
+
+History features include:
+
+- View saved records
+- Search records
+- Filter records
+- Sort records
+- Pagination
+- Show 10 / 20 / 50 / 100 items
+- Compact cards
+- View document
+- Edit document
+- Generate PDF
+- Delete document
+- Select mode
+- Select current page
+- Select all filtered/history records
+- Mark clear
+- Bulk delete
+- Export selected PDFs
+- Export multiple PDFs as ZIP
+- Export selected CSV backup
+- Export full CSV backup
+- Export filtered CSV backup
+- Import CSV backup
+- Conflict handling during import
+
+Import conflict options include:
+
+```text
+Skip Duplicates
+Replace Existing
+Keep Both
+```
 
 ---
 
@@ -172,7 +455,7 @@ The preview screen supports different modes such as:
 
 The app generates professional PDF documents using custom HTML templates.
 
-PDF generation is handled using:
+PDF generation uses:
 
 ```text
 expo-print
@@ -180,7 +463,9 @@ expo-sharing
 expo-file-system
 ```
 
-Quotation PDF features include:
+Quotation and Invoice PDF templates are separate.
+
+PDF features include:
 
 - A4-safe layout
 - Compact item table
@@ -192,74 +477,16 @@ Quotation PDF features include:
 - Discount and tax calculation
 - Grand total section
 - Payment details
+- Mobile payment details
 - Notes section
 - Footer support
 - Multi-item handling
-- Multi-page support for larger quotations
-
----
-
-## 🗂️ Quotation History
-
-Saved quotations are stored locally and managed from the History screen.
-
-History features include:
-
-- View saved quotations
-- Search quotations
-- Filter quotations
-- Sort quotations
-- Pagination
-- Show 10 / 20 / 50 / 100 items
-- Compact quotation cards
-- View quotation
-- Edit quotation
-- Delete quotation
-- Generate quotation PDF
-- Export selected quotations
-- Export multiple quotations as ZIP
-- CSV backup
-- CSV import
-- Conflict handling during import
-- Selection mode
-- Bulk delete support
-
----
-
-## 📝 Draft Quotations
-
-The app supports saving incomplete quotations as drafts.
-
-Draft quotation features include:
-
-- Save partial quotation as draft
-- Prevent saving fully empty draft forms
-- Show saved draft list
-- Search drafts
-- Continue draft editing
-- Preview draft
-- Delete single draft
-- Clear all drafts
-
-Draft rules:
-
-```text
-Empty form = draft will not be saved
-Partial form = draft can be saved
-Draft data = stored separately from final quotation history
-```
-
-Draft storage key:
-
-```text
-QUOTATION_DRAFTS
-```
-
-Final quotation storage key:
-
-```text
-QUOTATIONS_HISTORY
-```
+- Multi-page support
+- Invoice payment status badge
+- Invoice reference quotation number support
+- Share generated PDF
+- Export selected PDFs
+- Export multiple PDFs as ZIP
 
 ---
 
@@ -267,7 +494,7 @@ QUOTATIONS_HISTORY
 
 The Settings module stores reusable information for faster document creation.
 
-Current settings sections include:
+Settings sections include:
 
 - Company Information
 - Client Profiles
@@ -276,9 +503,96 @@ Current settings sections include:
 - Mobile Payment Info
 - Signature
 - Notes
-- Quotation Drafts
+- Quotations Drafts
+- Invoice Drafts
 
-The Settings UI has been improved with a compact premium card style using soft gradients, smaller spacing, and mobile-friendly layout.
+Reusable data from Settings can be loaded into both Quotation and Invoice forms.
+
+### Settings Backup Features
+
+The following settings pages support CSV export/import/backup:
+
+```text
+✅ Company Information
+✅ Client Profiles
+✅ Items Catalog
+✅ Payment Terms & Method
+✅ Mobile Payment Info
+✅ Signature
+✅ Notes
+```
+
+Each supported settings page includes:
+
+- Export All
+- Select mode
+- Export Selected
+- Single card export
+- Import CSV
+- Conflict handling
+- Skip duplicates
+- Replace existing
+- Keep both
+- Default preset handling
+
+---
+
+## 🧭 Home, Footer, and Floating Quick Button
+
+### Home Screen
+
+The Home screen provides quick access to major app areas:
+
+- Create Quotation
+- Quotation History
+- Create Invoice
+- Invoice History
+- Drafts
+- Settings
+- About
+- Terms & Conditions
+- Privacy Policy
+
+The Home footer menu includes compact links for:
+
+- About
+- Terms
+- Privacy
+- Settings
+
+The app version is shown on the About page.
+
+### Floating Quick Button
+
+The app includes a floating quick action button.
+
+Floating button features include:
+
+- Quick navigation shortcuts
+- Draggable position
+- Scrollable menu
+- Compact but readable menu items
+- Isolated low-dependency structure
+- Easy to remove or modify without affecting main flows
+
+Important rule:
+
+```text
+FloatingQuickButton should remain isolated and low-dependency.
+Changing or removing it should not affect Invoice, Quotation, Draft, History, or Settings logic.
+```
+
+---
+
+## 📄 Static Information Pages
+
+The app includes mobile-friendly information pages:
+
+- About This App
+- Terms & Conditions
+- Privacy Policy
+
+These pages use the same pink brand UI style and custom header.
 
 ---
 
@@ -286,46 +600,78 @@ The Settings UI has been improved with a compact premium card style using soft g
 
 The app uses AsyncStorage to store data locally on the user's device.
 
-Storage system currently includes:
-
-- Save quotation
-- Update quotation
-- Delete quotation
-- Get all quotations
-- Save quotation drafts
-- Update quotation drafts
-- Delete quotation drafts
-- Clear quotation drafts
-- Save imported quotations
-- Clear quotation data
-
 Storage package:
 
 ```text
 @react-native-async-storage/async-storage
 ```
 
+Storage behavior:
+
+- Offline-first
+- Local device storage
+- No automatic cloud sync
+- User controls export/import/share actions
+- Deleting the app may delete local data
+- Users should export backups regularly
+
+---
+
+## 🗂️ Storage Keys
+
+Core storage areas include:
+
+```text
+QUOTATIONS_HISTORY
+QUOTATION_DRAFTS
+INVOICES_HISTORY
+INVOICE_DRAFTS
+```
+
+Settings preset storage includes separate keys for:
+
+```text
+Company Profiles
+Client Profiles
+Items Catalog
+Payment Profiles
+Mobile Payment Profiles
+Signature Profiles
+Note Templates
+```
+
+Important rule:
+
+```text
+Quotation data and invoice data must remain separate.
+Draft data and final saved data must remain separate.
+Settings presets must remain reusable for both quotation and invoice forms.
+```
+
 ---
 
 ## 📤 Backup & Import
 
-The app supports CSV-based backup and import for quotation data.
+The app supports CSV-based backup and import.
 
 Backup/import features include:
 
-- Export all quotation data as CSV
-- Export selected quotation data
-- Import saved backup CSV
+- Export all records
+- Export filtered records
+- Export selected records
+- Export single preset record
+- Import CSV backup
 - Detect conflicts during import
-- Merge imported quotations
-- Replace existing quotations
+- Skip duplicate records
+- Replace existing records
 - Keep both copies
-- Skip duplicates
+- Preserve draft data during invoice import
+- Preserve default preset when possible
 
 Recommended practice:
 
 ```text
-Export backup regularly before uninstalling, updating, or resetting the app.
+Export backups regularly before uninstalling, updating, resetting, or moving to another device.
 ```
 
 ---
@@ -343,6 +689,8 @@ Export backup regularly before uninstalling, updating, or resetting the app.
 | Expo Sharing | PDF sharing |
 | Expo FileSystem | File read/write support |
 | Expo Document Picker | CSV import support |
+| Expo Image Picker | Logo/signature image selection |
+| Expo Image Manipulator | Image resize/compression |
 | Expo Linear Gradient | UI gradient styling |
 | Ionicons | App icons |
 | JSZip | Multiple PDF export as ZIP |
@@ -350,8 +698,6 @@ Export backup regularly before uninstalling, updating, or resetting the app.
 ---
 
 ## 📁 Project Structure
-
-Recommended project structure:
 
 ```text
 invoice-quotation-generator/
@@ -378,18 +724,29 @@ invoice-quotation-generator/
     │
     ├── screens/
     │   ├── HomeScreen.js
-    │   ├── HomeScreenStyle.js
+    │   ├── HomeScreenStyles.js
     │   │
     │   ├── SettingsScreen.js
     │   ├── SettingsScreenStyle.js
     │   │
+    │   ├── AboutUsScreen.js
+    │   ├── TermsConditionsScreen.js
+    │   ├── PrivacyPolicyScreen.js
+    │   │
     │   ├── CompanySettingsScreen.js
+    │   ├── CompanySettingsScreenStyle.js
     │   ├── ClientSettingsScreen.js
+    │   ├── ClientSettingsScreenStyle.js
     │   ├── ItemsCatalogSettingsScreen.js
+    │   ├── ItemsCatalogSettingsScreenStyle.js
     │   ├── PaymentSettingsScreen.js
+    │   ├── PaymentSettingsScreenStyle.js
     │   ├── MobilePaymentSettingsScreen.js
+    │   ├── MobilePaymentSettingsScreenStyle.js
     │   ├── SignatureSettingsScreen.js
+    │   ├── SignatureSettingsScreenStyle.js
     │   ├── NotesSettingsScreen.js
+    │   ├── NotesSettingsScreenStyle.js
     │   │
     │   ├── CreateQuotationScreen.js
     │   ├── CreateQuotationScreenStyle.js
@@ -405,10 +762,14 @@ invoice-quotation-generator/
     │   ├── InvoicePreviewScreen.js
     │   ├── InvoicePreviewScreenStyle.js
     │   ├── InvoiceHistoryScreen.js
-    │   └── InvoiceHistoryScreenStyle.js
+    │   ├── InvoiceHistoryScreenStyle.js
+    │   ├── InvoiceDraftScreen.js
+    │   └── InvoiceDraftScreenStyle.js
     │
     ├── services/
     │   ├── storageService.js
+    │   ├── settingsService.js
+    │   ├── presetBackupService.js
     │   ├── pdfService.js
     │   └── csvService.js
     │
@@ -430,6 +791,10 @@ invoice-quotation-generator/
     │   └── appConstants.js
     │
     ├── components/
+    │   ├── FloatingQuickButton.js
+    │   ├── FloatingQuickButtonStyle.js
+    │   └── PresetSelector.js
+    │
     ├── context/
     ├── data/
     └── hooks/
@@ -439,12 +804,10 @@ invoice-quotation-generator/
 
 ## 🧭 App Navigation Flow
 
-Current quotation flow:
+### Quotation Flow
 
 ```text
-App.js
-  ↓
-AppNavigator.js
+AppNavigator
   ↓
 HomeScreen
   ├── CreateQuotationScreen
@@ -455,24 +818,39 @@ HomeScreen
   │     └── CreateQuotationScreen
   │
   └── DraftQuotationScreen
-        ├── CreateQuotationScreen
-        └── PreviewScreen
+        └── CreateQuotationScreen
 ```
 
-Planned invoice flow:
+### Invoice Flow
 
 ```text
-App.js
-  ↓
-AppNavigator.js
+AppNavigator
   ↓
 HomeScreen
   ├── CreateInvoiceScreen
   │     └── InvoicePreviewScreen
   │
-  └── InvoiceHistoryScreen
-        ├── InvoicePreviewScreen
+  ├── InvoiceHistoryScreen
+  │     ├── InvoicePreviewScreen
+  │     └── CreateInvoiceScreen
+  │
+  └── InvoiceDraftScreen
         └── CreateInvoiceScreen
+```
+
+### Settings Flow
+
+```text
+SettingsScreen
+  ├── Company Information
+  ├── Client Profiles
+  ├── Items Catalog
+  ├── Payment Terms & Method
+  ├── Mobile Payment Info
+  ├── Signature
+  ├── Notes
+  ├── Quotations Drafts
+  └── Invoice Drafts
 ```
 
 ---
@@ -490,10 +868,9 @@ src/screens/HomeScreen.js
 Purpose:
 
 - Shows app landing page
-- Provides navigation to create quotation
-- Provides navigation to quotation history
-- Provides navigation to create invoice
-- Provides navigation to invoice history
+- Provides quick access to quotation and invoice flows
+- Provides footer links to About, Terms, Privacy, and Settings
+- Keeps mobile UI compact
 
 ---
 
@@ -514,11 +891,22 @@ Purpose:
 - Handles pricing
 - Handles logo and signature
 - Handles draft saving
-- Sends quotation data to preview screen
+- Handles validation
+- Handles unsaved protection
+- Sends quotation data to Preview screen
+
+Important preserved naming:
+
+```text
+State variable: invoice
+Item list key: services
+```
+
+Do not rename these without a careful migration plan.
 
 ---
 
-### Preview Screen
+### Quotation Preview Screen
 
 File:
 
@@ -532,11 +920,11 @@ Purpose:
 - Allows saving new quotation
 - Allows updating existing quotation
 - Allows PDF generation
-- Allows sharing generated PDF
+- Allows draft-to-final cleanup after successful save
 
 ---
 
-### History Screen
+### Quotation History Screen
 
 File:
 
@@ -548,10 +936,9 @@ Purpose:
 
 - Displays all saved quotations
 - Supports search, sort, filter, pagination
-- Allows opening quotation preview
-- Allows editing saved quotation
-- Allows deleting quotation
-- Supports backup and import
+- Supports view, edit, PDF, delete
+- Supports selection, bulk PDF export, CSV export, and CSV import
+- Supports full and filtered backup
 
 ---
 
@@ -566,10 +953,13 @@ src/screens/DraftQuotationScreen.js
 Purpose:
 
 - Displays saved quotation drafts
-- Allows continuing drafts
-- Allows previewing drafts
+- Allows continuing draft editing
 - Allows deleting drafts
+- Allows selecting drafts
+- Allows deleting selected drafts
 - Allows clearing all drafts
+
+Draft quotation cards intentionally use Continue Editing instead of direct Preview.
 
 ---
 
@@ -583,9 +973,20 @@ src/screens/CreateInvoiceScreen.js
 
 Purpose:
 
-- Planned main form for creating invoices
-- Should follow the Create Quotation screen structure
-- Should remain separate from quotation logic
+- Main form for creating invoices
+- Handles company information
+- Handles client information
+- Handles invoice date and due date
+- Handles reference quotation number
+- Handles items/services
+- Handles pricing
+- Handles payment status
+- Handles logo and signature
+- Handles draft saving
+- Handles validation
+- Handles unsaved protection
+- Handles edit invoice mode
+- Handles Update Invoice from History edit mode
 
 ---
 
@@ -599,10 +1000,12 @@ src/screens/InvoicePreviewScreen.js
 
 Purpose:
 
-- Planned screen for invoice preview
-- Should allow saving invoice
-- Should allow invoice PDF generation
-- Should support view/edit modes
+- Shows final invoice preview
+- Allows saving invoice
+- Allows updating invoice
+- Allows generating invoice PDF
+- Allows sharing generated PDF
+- Protects incomplete invoice from final save/PDF
 
 ---
 
@@ -616,8 +1019,30 @@ src/screens/InvoiceHistoryScreen.js
 
 Purpose:
 
-- Planned screen for saved invoices
-- Should allow view, edit, PDF export, and delete
+- Displays saved invoices
+- Supports search, sort, filter, pagination
+- Supports view, edit, PDF, delete
+- Supports selection, PDF export, CSV export, CSV import
+- Supports move-to-draft lifecycle through edit mode
+
+---
+
+### Invoice Draft Screen
+
+File:
+
+```text
+src/screens/InvoiceDraftScreen.js
+```
+
+Purpose:
+
+- Displays invoice drafts
+- Allows continuing draft editing
+- Allows selecting drafts
+- Allows deleting selected drafts
+- Allows clearing all drafts
+- Keeps draft actions focused on Continue Editing
 
 ---
 
@@ -633,27 +1058,82 @@ src/services/storageService.js
 
 Used for local data management.
 
-Current quotation functions include:
+Core functions include:
 
-- Get all quotations
-- Save quotation
-- Update quotation
-- Delete quotation
-- Save all quotations
-- Clear quotation data
-- Get draft quotations
-- Save draft quotation
-- Update draft quotation
-- Delete draft quotation
-- Clear draft quotations
+```text
+Quotation:
+- getQuotations()
+- saveQuotation()
+- updateQuotation()
+- deleteQuotation()
+- saveAllQuotations()
+- clearQuotationData()
 
-Planned invoice functions:
+Quotation Drafts:
+- getDraftQuotations()
+- saveDraftQuotation()
+- deleteDraftQuotation()
+- clearDraftQuotations()
 
-- Get all invoices
-- Save invoice
-- Update invoice
-- Delete invoice
-- Clear invoice data
+Invoice:
+- getInvoices()
+- saveInvoice()
+- updateInvoice()
+- deleteInvoice()
+- saveAllInvoices()
+
+Invoice Drafts:
+- getInvoiceDrafts()
+- saveInvoiceDraft()
+- deleteInvoiceRecord()
+- clearInvoiceDrafts()
+```
+
+---
+
+### Settings Service
+
+File:
+
+```text
+src/services/settingsService.js
+```
+
+Used for reusable preset data.
+
+Settings data includes:
+
+```text
+Company Profiles
+Client Profiles
+Items Catalog
+Payment Profiles
+Mobile Payment Profiles
+Signature Profiles
+Note Templates
+```
+
+---
+
+### Preset Backup Service
+
+File:
+
+```text
+src/services/presetBackupService.js
+```
+
+Used for settings preset CSV export/import.
+
+Features include:
+
+- Smart CSV export
+- Smart CSV import
+- Conflict detection
+- Skip duplicates
+- Replace existing
+- Keep both
+- Default preset normalization
 
 ---
 
@@ -667,65 +1147,23 @@ src/services/pdfService.js
 
 Used for generating PDF files from HTML templates.
 
-Quotation PDF generation uses:
+PDF service supports:
 
 ```text
-quotationTemplate.js
+generatePDF()
+generateInvoicePDF()
 ```
 
-Planned invoice PDF generation should use:
-
-```text
-invoiceTemplate.js
-```
-
----
-
-### Quotation Template
-
-File:
+Quotation PDF uses:
 
 ```text
 src/templates/quotationTemplate.js
 ```
 
-Used to generate the final HTML layout for quotation PDF.
-
----
-
-### Invoice Template
-
-File:
+Invoice PDF uses:
 
 ```text
 src/templates/invoiceTemplate.js
-```
-
-Planned template for generating invoice PDF layout.
-
----
-
-## 🗂️ Storage Keys
-
-Current implemented storage keys:
-
-```text
-QUOTATIONS_HISTORY
-QUOTATION_DRAFTS
-```
-
-Planned invoice storage keys:
-
-```text
-INVOICES_HISTORY
-INVOICE_DRAFTS
-```
-
-Important rule:
-
-```text
-Quotation data and invoice data should never be mixed.
-Draft data and final saved data should never be mixed.
 ```
 
 ---
@@ -747,7 +1185,7 @@ Tax Amount = Taxable Amount × Tax Percentage / 100
 Grand Total = Taxable Amount + Tax Amount
 ```
 
-This logic should be shared carefully or duplicated safely between quotation and invoice modules without breaking existing quotation behavior.
+Both quotation and invoice flows follow the same pricing calculation concept.
 
 ---
 
@@ -879,20 +1317,25 @@ This file includes:
 - Splash screen
 - Android package name
 - EAS project ID
+- App version
+
+The About page can display the app version dynamically from Expo config.
 
 ---
 
 ## 🔐 Data Storage Notes
 
-All quotation and invoice data should be stored locally on the user's device using AsyncStorage.
+All quotation and invoice data is stored locally on the user's device using AsyncStorage.
 
 Important notes:
 
 - Data is offline-first
 - Data is not automatically synced to cloud
 - Deleting the app may delete local data
+- Clearing device storage may delete local data
 - Users should export backup files regularly
 - Quotation and invoice storage must remain separate
+- Draft and final saved records must remain separate
 
 ---
 
@@ -901,6 +1344,8 @@ Important notes:
 ### Quotation
 
 - Create quotation
+- Add company information
+- Add client information
 - Add multiple items/services
 - Add item description
 - Add discount
@@ -908,9 +1353,11 @@ Important notes:
 - Add logo
 - Add signature
 - Preview quotation
+- Validation blocks incomplete preview
 - Save quotation
 - Edit saved quotation
 - Update quotation
+- Save incomplete edit as draft when needed
 - Delete quotation
 - Search history
 - Sort history
@@ -920,28 +1367,52 @@ Important notes:
 - Export selected PDFs
 - Export ZIP
 - Export CSV backup
+- Export filtered CSV
 - Import CSV backup
+- Conflict handling
 - Save draft
 - Continue draft
-- Preview draft
 - Delete draft
+- Select draft
+- Delete selected drafts
+- Clear all drafts
+- Draft final save cleanup
 
 ---
 
 ### Invoice
 
 - Create invoice
+- Add company information
+- Add client information
 - Add invoice items
 - Add invoice date
 - Add due date
+- Add reference quotation number
+- Add payment status
 - Preview invoice
+- Validation blocks incomplete preview
 - Save invoice
 - Generate invoice PDF
+- Share PDF
 - View invoice history
 - View invoice
 - Edit invoice
+- Update invoice
+- Save incomplete edit as draft when needed
+- Move invoice to draft when needed
 - Delete invoice
-- Export invoice PDF
+- Export selected PDFs
+- Export ZIP
+- Export CSV backup
+- Import CSV backup
+- Preserve drafts during import
+- Save invoice draft
+- Continue invoice draft
+- Delete invoice draft
+- Select invoice draft
+- Delete selected drafts
+- Clear all drafts
 
 ---
 
@@ -954,150 +1425,78 @@ Important notes:
 - Mobile payment settings
 - Signature settings
 - Notes settings
-- Draft quotations
+- Export all preset CSV
+- Export selected preset CSV
+- Export single preset CSV
+- Import preset CSV
+- Conflict handling
+- Default preset restore
+- Preset load into Create Quotation
+- Preset load into Create Invoice
+
+---
+
+### UI / Navigation
+
+- Home footer menu
+- Floating Quick Button
+- Floating Quick Button scroll
+- About page
+- Terms & Conditions page
+- Privacy Policy page
+- Settings page bottom spacing
+- Draft card select/delete behavior
+- History card view/edit/PDF behavior
 
 ---
 
 ## 🛣️ Development Roadmap
 
-### Phase I0 — Project Inspection
-
-Before starting invoice development:
-
-- Inspect current project structure
-- Identify existing quotation files
-- Identify existing invoice placeholder files
-- Confirm navigation routes
-- Confirm storage service structure
-- Confirm PDF service structure
-- Plan a safe invoice implementation
-
----
-
-### Phase I1 — Invoice Storage + Navigation
-
-Add invoice storage functions:
+### Completed
 
 ```text
-getInvoices()
-saveInvoice()
-updateInvoice()
-deleteInvoice()
-clearAllInvoices()
+✅ Project inspection
+✅ Quotation core
+✅ Quotation PDF
+✅ Quotation history
+✅ Quotation drafts
+✅ Quotation validation
+✅ Quotation unsaved protection
+✅ Quotation auto draft
+✅ Quotation draft cleanup
+✅ Invoice storage
+✅ Invoice create
+✅ Invoice preview
+✅ Invoice PDF
+✅ Invoice history
+✅ Invoice drafts
+✅ Invoice validation
+✅ Invoice unsaved protection
+✅ Invoice auto draft
+✅ Settings preset system
+✅ Settings CSV backup/import
+✅ Floating Quick Button
+✅ About / Terms / Privacy pages
 ```
 
-Add invoice storage key:
+### Next Recommended Phases
 
 ```text
-INVOICES_HISTORY
+Phase Next-1:
+Final full regression test
+
+Phase Next-2:
+Quotation Draft CSV Backup / Import
+
+Phase Next-3:
+Invoice Draft CSV Backup / Import
+
+Phase Next-4:
+Code cleanup and reusable component extraction
+
+Phase Next-5:
+Production build testing
 ```
-
-Confirm navigation routes:
-
-```text
-CreateInvoice
-InvoicePreview
-InvoiceHistory
-```
-
----
-
-### Phase I2 — Create Invoice
-
-Build or update:
-
-```text
-CreateInvoiceScreen.js
-CreateInvoiceScreenStyle.js
-```
-
-Required invoice fields:
-
-- Invoice number
-- Invoice date
-- Due date
-- Company information
-- Client / Bill To information
-- Items
-- Discount
-- Tax
-- Total
-- Payment information
-- Notes
-- Signature
-
----
-
-### Phase I3 — Invoice Preview
-
-Build:
-
-```text
-InvoicePreviewScreen.js
-InvoicePreviewScreenStyle.js
-```
-
-Invoice preview should support:
-
-- Save Invoice
-- Generate PDF
-- View mode
-- Edit mode
-
----
-
-### Phase I4 — Invoice PDF
-
-Build:
-
-```text
-invoiceTemplate.js
-```
-
-Update:
-
-```text
-pdfService.js
-```
-
-Invoice PDF generation must not break quotation PDF generation.
-
----
-
-### Phase I5 — Invoice History
-
-Build:
-
-```text
-InvoiceHistoryScreen.js
-InvoiceHistoryScreenStyle.js
-```
-
-Invoice history should support:
-
-- Search
-- Pagination
-- View
-- Edit
-- PDF
-- Delete
-
----
-
-### Phase I6 — Final Testing
-
-Test full invoice flow:
-
-- Create Invoice
-- Preview Invoice
-- Save Invoice
-- Generate PDF
-- Invoice History
-- View Invoice
-- Edit Invoice
-- Delete Invoice
-
-Also retest quotation side to make sure existing features still work.
 
 ---
 
@@ -1105,20 +1504,21 @@ Also retest quotation side to make sure existing features still work.
 
 The project can be further improved by:
 
-- Building the full invoice generator module
-- Adding invoice history
-- Adding invoice PDF template
-- Adding invoice drafts
+- Draft CSV backup/import for quotation drafts
+- Draft CSV backup/import for invoice drafts
 - Moving reusable UI blocks into `src/components`
-- Moving backup/import logic into a separate service
-- Adding currency support
+- Moving more backup/import logic into reusable services
+- Adding currency selector
 - Adding cloud backup
 - Adding authentication
 - Adding multi-language support
 - Adding dark mode
-- Adding payment status tracking
-- Adding due date reminders
 - Adding analytics/reporting
+- Adding due date reminders
+- Adding recurring invoice support
+- Adding customer statement/reporting
+- Adding business dashboard
+- Adding print-friendly options
 
 ---
 
@@ -1126,18 +1526,41 @@ The project can be further improved by:
 
 Before releasing a production version, it is recommended to:
 
-- Remove unused old files
-- Clean unused folders
+- Remove unused old helper functions carefully
+- Clean unused styles only after testing
 - Split large screen files into reusable components
+- Keep quotation and invoice logic separate unless intentionally shared
+- Keep PDF templates separate
 - Validate all user input
-- Improve error handling
-- Add loading indicators
-- Add form validation
-- Add confirmation dialogs
+- Improve error handling where needed
+- Add loading indicators for large imports/exports
 - Test PDF generation on real devices
 - Test backup/import on real devices
 - Test Android production build
-- Retest quotation side after adding invoice side
+- Retest quotation side after invoice changes
+- Retest invoice side after quotation changes
+
+---
+
+## ⚠️ Important Development Rules
+
+When modifying this project:
+
+1. Do not break existing quotation functionality.
+2. Do not break existing invoice functionality.
+3. Do not mix quotation and invoice storage.
+4. Do not rename existing stable data keys without a migration plan.
+5. Keep quotation templates and invoice templates separate.
+6. Keep quotation history and invoice history separate.
+7. Keep quotation drafts and invoice drafts separate.
+8. Preserve `invoice` state name and `services` item key in `CreateQuotationScreen.js`.
+9. Use full file replacement for large changes to avoid missing code.
+10. Use small old/new patch blocks for small changes.
+11. Test each phase before moving to the next phase.
+12. Preserve old working logic unless a change is explicitly planned.
+13. Keep UI compact and mobile-friendly.
+14. Keep PDF output A4-safe and clean.
+15. Keep FloatingQuickButton isolated and low-dependency.
 
 ---
 
@@ -1195,20 +1618,34 @@ Make sure media permissions are allowed on the device.
 
 ---
 
-## ⚠️ Important Development Rules
+### CSV import issue
 
-When modifying this project:
+Check that the imported CSV file was exported from the app or follows the same expected structure.
 
-1. Do not break existing quotation functionality.
-2. Do not mix quotation and invoice storage.
-3. Do not rename existing stable data keys without a migration plan.
-4. Keep quotation templates and invoice templates separate.
-5. Keep quotation history and invoice history separate.
-6. Use full file replacement for large changes to avoid missing code.
-7. Test each phase before moving to the next phase.
-8. Preserve old logic unless a change is explicitly planned.
-9. Keep UI compact and mobile-friendly.
-10. Keep PDF output A4-safe and clean.
+Recommended:
+
+```text
+Export a fresh backup first.
+Then test import with a small file.
+```
+
+---
+
+### Local data missing
+
+Possible reasons:
+
+- App was uninstalled
+- Device storage was cleared
+- AsyncStorage data was reset
+- Backup was not restored
+- Wrong CSV file was imported
+
+Recommended:
+
+```text
+Keep regular CSV backups of important app data.
+```
 
 ---
 
@@ -1216,14 +1653,15 @@ When modifying this project:
 
 If this project is continued in a new ChatGPT chat, upload:
 
-1. Latest project ZIP
-2. Project handoff/context PDF
-3. This README.md
+1. Latest full project ZIP
+2. This README.md
+3. Any latest issue screenshots
+4. A short note of what was last changed
 
 Then ask:
 
 ```text
-This is my latest Invoice & Quotation Generator project. First inspect the project structure and summarize the current state. Do not start coding yet. After inspection, provide a safe phase-wise plan to build the Invoice Generator side while preserving the existing Quotation Generator logic.
+This is my latest Invoice & Quotation Generator project. First inspect the project structure and summarize the current state. Do not start coding yet. After inspection, provide a safe phase-wise plan for the next task while preserving all existing Invoice, Quotation, Draft, History, PDF, Settings, and Floating Button logic.
 ```
 
 ---
@@ -1275,41 +1713,12 @@ Built with:
 - Expo Print
 - Expo Sharing
 - Expo FileSystem
+- Expo Document Picker
+- Expo Image Picker
+- Expo Image Manipulator
 - Expo Linear Gradient
 - Ionicons
 - JSZip
-
----
-
-## 📌 Project Status
-
-Current status:
-
-```text
-Active Development
-```
-
-Completed:
-
-```text
-Quotation Generator Core
-Quotation Preview
-Quotation PDF
-Quotation History
-Quotation Drafts
-Settings UI
-Backup / Import
-```
-
-Pending:
-
-```text
-Invoice Generator
-Invoice Preview
-Invoice PDF
-Invoice History
-Invoice Storage
-```
 
 ---
 
@@ -1317,7 +1726,18 @@ Invoice Storage
 
 This project is a mobile-first invoice and quotation generator app designed to help users create professional business documents quickly and efficiently.
 
-The quotation side is mostly complete and stable. The next major development goal is to build the invoice side using the same safe, structured, and phase-by-phase approach.
+The app now supports both quotation and invoice workflows, including create, preview, save, update, draft, history, PDF generation, backup, import, reusable settings presets, and mobile-friendly navigation.
 
-Once the invoice generator module is complete, this app will become a complete mobile business document generator for both quotations and invoices.
+The main focus of the project is:
+
+```text
+Safe development
+Offline-first local storage
+Reusable business data
+Clean mobile UI
+Separate quotation and invoice logic
+Reliable draft/history/PDF workflows
+```
+
+Once final regression testing and optional draft backup/import features are completed, the app will be ready for broader real-world usage and production build testing.
 ```
