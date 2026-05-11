@@ -192,6 +192,115 @@ const styles = StyleSheet.create({
     color: '#b42318',
   },
 
+  selectToggleButton: {
+    minHeight: 29,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#f3c8d4',
+    backgroundColor: '#fffafd',
+    marginHorizontal: 6,
+  },
+
+  selectToggleButtonActive: {
+    backgroundColor: BRAND_COLOR,
+    borderColor: BRAND_COLOR,
+  },
+
+  selectToggleText: {
+    marginLeft: 4,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '900',
+    color: BRAND_COLOR,
+  },
+
+  selectToggleTextActive: {
+    color: '#ffffff',
+  },
+
+  selectionActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 7,
+  },
+
+  selectedCountPill: {
+    minHeight: 30,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff0f5',
+    borderWidth: 1,
+    borderColor: '#f3c8d4',
+    marginRight: 6,
+  },
+
+  selectedCountText: {
+    fontSize: 10.3,
+    lineHeight: 13,
+    fontWeight: '900',
+    color: BRAND_COLOR,
+  },
+
+  selectAllButton: {
+    minHeight: 30,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f3ebff',
+    borderWidth: 1,
+    borderColor: '#eadbff',
+    marginRight: 6,
+  },
+
+  selectAllText: {
+    fontSize: 10.3,
+    lineHeight: 13,
+    fontWeight: '900',
+    color: '#7b4cc2',
+  },
+
+  deleteSelectedButton: {
+    flex: 1,
+    minHeight: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#b42318',
+    paddingHorizontal: 8,
+    marginRight: 6,
+  },
+
+  deleteSelectedText: {
+    fontSize: 10.3,
+    lineHeight: 13,
+    fontWeight: '900',
+    color: '#ffffff',
+  },
+
+  clearSelectionButton: {
+    minHeight: 30,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#f3c8d4',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  clearSelectionText: {
+    fontSize: 10.3,
+    lineHeight: 13,
+    fontWeight: '900',
+    color: '#b42318',
+  },
+
   // ======================================================
   // LIST
   // ======================================================
@@ -269,8 +378,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  amountMainText: {
+  // ======================================================
+  // INVOICE DRAFT LEFT INVOICE NUMBER
+  // NEW:
+  // Small invoice number line above Amount.
+  // ======================================================
+  leftInvoiceNumberText: {
     marginTop: 6,
+    fontSize: 11,
+    lineHeight: 14,
+    color: '#667085',
+    fontWeight: '900',
+  },
+
+  amountMainText: {
+    marginTop: 2,
     fontSize: 12.8,
     lineHeight: 16,
     color: '#344054',
@@ -281,6 +403,42 @@ const styles = StyleSheet.create({
     width: 132,
     alignItems: 'flex-end',
     paddingTop: 2,
+  },
+
+  selectCircleButton: {
+    width: 32,
+    height: 28,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+
+ cardTopDeleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#f3c8d4',
+    backgroundColor: '#fff7fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+
+  selectCircle: {
+    width: 23,
+    height: 23,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: BRAND_COLOR,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  selectCircleActive: {
+    backgroundColor: BRAND_COLOR,
+    borderColor: BRAND_COLOR,
   },
 
   rightInfoText: {

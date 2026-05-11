@@ -54,6 +54,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  historyHeaderCreateButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   historyHeaderTitle: {
     flex: 1,
     marginHorizontal: 8,
@@ -546,6 +555,11 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
 
+  filteredBackupButton: {
+    backgroundColor: '#0ea5e9',
+    marginRight: 5,
+  },
+
   importButton: {
     backgroundColor: '#16a34a',
   },
@@ -553,7 +567,7 @@ const styles = StyleSheet.create({
   backupButtonText: {
     color: '#ffffff',
     textAlign: 'center',
-    fontSize: 10.5,
+    fontSize: 9.8,
     lineHeight: 14,
     fontWeight: '900',
   },

@@ -23,9 +23,10 @@ import {
   Modal,
   FlatList,
   Alert,
+  AppState,
 } from 'react-native';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -544,6 +545,16 @@ export default function CreateQuotationScreen({ navigation, route }) {
     route?.params?.draftData?.draftId || route?.params?.draftId || null
   );
 
+  // ======================================================
+  // QUOTATION UNSAVED PROTECTION REFS
+  // NEW:
+  // Keeps navigation/app-state protection safe without changing
+  // existing quotation form state names or storage shape.
+  // ======================================================
+  const appStateRef = useRef(AppState.currentState);
+  const isDraftSavingRef = useRef(false);
+  const allowNextNavigationRef = useRef(false);
+
   const isEditMode = Boolean(route?.params?.editData);
   const isDraftMode = Boolean(route?.params?.draftData);
 
@@ -959,6 +970,96 @@ export default function CreateQuotationScreen({ navigation, route }) {
   const grandTotal = taxableAmount + taxValue;
 
   // ======================================================
+  // QUOTATION FINAL VALIDATION
+  // NEW:
+  // Blocks incomplete quotation from Preview / Final Update.
+  // Draft save remains flexible and can still save partial data.
+  // IMPORTANT:
+  // Keep state name "invoice" and item list key "services".
+  // ======================================================
+  const cleanFinalValue = (value) => toInputString(value).trim();
+
+  const getValidFinalQuotationServices = () => {
+    const services = Array.isArray(invoice.services) ? invoice.services : [];
+
+    return services.filter((item) => {
+      if (isBlankServiceItem(item)) {
+        return false;
+      }
+
+      const hasNameOrDescription = Boolean(
+        cleanFinalValue(item?.name) || cleanFinalValue(item?.description)
+      );
+
+      const quantity = parseFloat(item?.quantity);
+      const unitPrice = parseFloat(item?.unitPrice);
+
+      return (
+        hasNameOrDescription &&
+        !Number.isNaN(quantity) &&
+        quantity > 0 &&
+        !Number.isNaN(unitPrice) &&
+        unitPrice > 0
+      );
+    });
+  };
+
+  const getQuotationValidationError = () => {
+    if (!cleanFinalValue(invoice.companyName)) {
+      return 'Company Name is required.';
+    }
+
+    if (
+      !cleanFinalValue(invoice.clientName) &&
+      !cleanFinalValue(invoice.clientCompany)
+    ) {
+      return 'Client Name or Client Company is required.';
+    }
+
+    if (getValidFinalQuotationServices().length === 0) {
+      return 'Please add at least one valid item/service with name or description, quantity, and price.';
+    }
+
+    if (grandTotal <= 0) {
+      return 'Total Amount must be greater than 0.';
+    }
+
+    return '';
+  };
+
+  const validateQuotationBeforeFinalAction = ({
+    allowSaveAsDraft = false,
+  } = {}) => {
+    const validationError = getQuotationValidationError();
+
+    if (!validationError) {
+      return true;
+    }
+
+    const alertButtons = [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+    ];
+
+    if (allowSaveAsDraft && hasAnyDraftData()) {
+      alertButtons.push({
+        text: 'Save as Draft',
+        onPress: saveDraftFromValidationAlert,
+      });
+    }
+
+    Alert.alert(
+      'Incomplete Quotation',
+      `${validationError}\n\nPlease complete the quotation before continuing.`,
+      alertButtons
+    );
+
+    return false;
+  };
+
+  // ======================================================
   // EDIT MODE DISPLAY LABEL
   // Used only for showing edit mode banner.
   // No data/calculation logic is changed here.
@@ -1099,6 +1200,111 @@ export default function CreateQuotationScreen({ navigation, route }) {
   };
 
   // ======================================================
+  // QUOTATION DRAFT SOURCE HELPER
+  // NEW:
+  // Passes draft id to Preview so successful final Save can
+  // remove the original draft from Draft Quotations.
+  // ======================================================
+  const getSourceDraftIdForFinalSave = () => {
+    return (
+      activeDraftId ||
+      invoice.draftId ||
+      route?.params?.draftData?.draftId ||
+      route?.params?.draftId ||
+      null
+    );
+  };
+
+  // ======================================================
+  // QUOTATION UNSAVED PROTECTION HELPERS
+  // NEW:
+  // - Silent draft save is used by back-leave alert and app background.
+  // - Edit mode is excluded to avoid creating accidental drafts
+  //   while editing a saved quotation.
+  // - Manual Draft button still uses the same saved draft data shape.
+  // ======================================================
+  const allowNextNavigation = () => {
+    allowNextNavigationRef.current = true;
+
+    setTimeout(() => {
+      allowNextNavigationRef.current = false;
+    }, 1200);
+  };
+
+  const saveCurrentQuotationDraftSilently = async ({
+    allowFromEditMode = false,
+  } = {}) => {
+    if (
+      (!allowFromEditMode && isEditMode) ||
+      !hasAnyDraftData() ||
+      isDraftSavingRef.current
+    ) {
+      return false;
+    }
+
+    isDraftSavingRef.current = true;
+
+    try {
+      const draftData = buildDraftQuotationData();
+      const success = await saveDraftQuotation(draftData);
+
+      if (success) {
+        setActiveDraftId(draftData.draftId);
+      }
+
+      return success;
+    } catch (error) {
+      console.log('Quotation silent draft save failed:', error);
+      return false;
+    } finally {
+      isDraftSavingRef.current = false;
+    }
+  };
+
+  const navigateToDraftsAfterSaving = () => {
+    allowNextNavigation();
+    navigation.navigate('DraftQuotation');
+  };
+
+  const handleSafeNavigateToHistory = () => {
+    if (isEditMode || !hasAnyDraftData()) {
+      navigation.navigate('History');
+      return;
+    }
+
+    Alert.alert(
+      'Unsaved Quotation',
+      'You have unsaved quotation changes. What do you want to do?',
+      [
+        {
+          text: 'Leave Without Saving',
+          style: 'destructive',
+          onPress: () => {
+            allowNextNavigation();
+            navigation.navigate('History');
+          },
+        },
+        {
+          text: 'Save as Draft',
+          onPress: async () => {
+            const success = await saveCurrentQuotationDraftSilently();
+
+            if (success) {
+              navigateToDraftsAfterSaving();
+            } else {
+              Alert.alert('Error', 'Could not save draft. Please try again.');
+            }
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  // ======================================================
   // CLEAN DRAFT DATA BEFORE PREVIEW
   // Important:
   // Draft ID must not be treated as final quotation ID.
@@ -1129,7 +1335,12 @@ export default function CreateQuotationScreen({ navigation, route }) {
   // calculated values are sent separately.
   // ======================================================
   const handlePreview = () => {
+    if (!validateQuotationBeforeFinalAction({ allowSaveAsDraft: true })) {
+      return;
+    }
+
     const previewReadyInvoice = getPreviewReadyInvoice();
+    const sourceDraftId = getSourceDraftIdForFinalSave();
 
     const previewInvoice = {
       ...previewReadyInvoice,
@@ -1137,6 +1348,8 @@ export default function CreateQuotationScreen({ navigation, route }) {
         buildCompanyContact(invoice.companyEmail, invoice.companyPhone) ||
         invoice.companyContact,
     };
+
+    allowNextNavigation();
 
     navigation.navigate('Preview', {
       ...previewInvoice,
@@ -1153,6 +1366,11 @@ export default function CreateQuotationScreen({ navigation, route }) {
       taxPercentage,
       taxAmount: taxValue,
       grandTotal,
+
+      // Draft cleanup support:
+      // PreviewScreen will delete this draft after successful final save.
+      sourceDraftId: sourceDraftId || undefined,
+      mode: sourceDraftId ? 'draftPreview' : undefined,
     });
   };
 
@@ -1166,6 +1384,10 @@ export default function CreateQuotationScreen({ navigation, route }) {
       handleDraftPress();
       return;
     }
+
+if (!validateQuotationBeforeFinalAction({ allowSaveAsDraft: true })) {
+  return;
+}
 
     const updatedQuotation = {
       ...invoice,
@@ -1256,16 +1478,13 @@ export default function CreateQuotationScreen({ navigation, route }) {
         {
           text: 'Save Draft',
           onPress: async () => {
-            const draftData = buildDraftQuotationData();
-            const success = await saveDraftQuotation(draftData);
+            const success = await saveCurrentQuotationDraftSilently();
 
             if (success) {
-              setActiveDraftId(draftData.draftId);
-
               Alert.alert('Success', 'Draft saved successfully.', [
                 {
                   text: 'OK',
-                  onPress: () => navigation.navigate('DraftQuotation'),
+                  onPress: navigateToDraftsAfterSaving,
                 },
               ]);
             } else {
@@ -1276,6 +1495,135 @@ export default function CreateQuotationScreen({ navigation, route }) {
       ]
     );
   };
+
+  // ======================================================
+  // QUOTATION VALIDATION ALERT DRAFT SAVE
+  // NEW:
+  // Used only when Go Preview validation alert offers Save as Draft.
+  // This avoids showing the manual "Save Draft?" confirmation twice.
+  // Manual Draft button still uses handleDraftPress().
+  // ======================================================
+  const saveDraftFromValidationAlert = async () => {
+    const success = await saveCurrentQuotationDraftSilently({
+      allowFromEditMode: true,
+    });
+    if (success) {
+      Alert.alert('Success', 'Draft saved successfully.', [
+        {
+          text: 'OK',
+          onPress: navigateToDraftsAfterSaving,
+        },
+      ]);
+    } else {
+      Alert.alert('Error', 'Could not save draft. Please try again.');
+    }
+  };
+
+
+  // ======================================================
+  // QUOTATION UNSAVED LEAVE PROTECTION
+  // NEW:
+  // Back gesture / hardware back / route remove will ask the user
+  // before leaving an unsaved new or draft quotation.
+  // Edit mode is excluded to protect existing saved quotation flow.
+  // ======================================================
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (
+        isEditMode ||
+        allowNextNavigationRef.current ||
+        !hasAnyDraftData()
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      Alert.alert(
+        'Unsaved Quotation',
+        'You have unsaved quotation changes. What do you want to do?',
+        [
+          {
+            text: 'Leave Without Saving',
+            style: 'destructive',
+            onPress: () => {
+              allowNextNavigation();
+              navigation.dispatch(event.data.action);
+            },
+          },
+          {
+            text: 'Save as Draft',
+            onPress: async () => {
+              const success = await saveCurrentQuotationDraftSilently();
+
+              if (success) {
+                allowNextNavigation();
+                navigation.dispatch(event.data.action);
+              } else {
+                Alert.alert(
+                  'Error',
+                  'Could not save draft. Please try again.'
+                );
+              }
+            },
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [
+    navigation,
+    isEditMode,
+    invoice,
+    activeDraftId,
+    subtotal,
+    discountValue,
+    taxPercentage,
+    taxValue,
+    grandTotal,
+  ]);
+
+  // ======================================================
+  // QUOTATION AUTO DRAFT ON APP BACKGROUND
+  // NEW:
+  // If app goes inactive/background with meaningful quotation data,
+  // save it silently as draft. Empty forms are ignored.
+  // Edit mode is excluded to avoid moving saved quotations to drafts.
+  // ======================================================
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextState) => {
+      const previousState = appStateRef.current;
+      appStateRef.current = nextState;
+
+      const isLeavingActiveState =
+        previousState === 'active' &&
+        (nextState === 'inactive' || nextState === 'background');
+
+      if (!isLeavingActiveState || isEditMode || !hasAnyDraftData()) {
+        return;
+      }
+
+      await saveCurrentQuotationDraftSilently();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [
+    isEditMode,
+    invoice,
+    activeDraftId,
+    subtotal,
+    discountValue,
+    taxPercentage,
+    taxValue,
+    grandTotal,
+  ]);
 
   // ======================================================
   // UI START
@@ -1313,7 +1661,7 @@ export default function CreateQuotationScreen({ navigation, route }) {
           <TouchableOpacity
             activeOpacity={0.8}
             style={styles.headerIconButton}
-            onPress={() => navigation.navigate('History')}
+            onPress={handleSafeNavigateToHistory}
           >
             <Ionicons name="time-outline" size={21} color="#ffffff" />
           </TouchableOpacity>

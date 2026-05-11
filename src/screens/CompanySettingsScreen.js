@@ -1,5 +1,8 @@
+// src/screens/CompanySettingsScreen.js
+
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   TextInput,
@@ -16,15 +19,26 @@ import { Ionicons } from '@expo/vector-icons';
 
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as DocumentPicker from 'expo-document-picker';
 
 import styles from './CompanySettingsScreenStyle';
 
 import {
   getCompanyProfiles,
+  saveCompanyProfiles,
   upsertCompanyProfile,
   deleteCompanyProfile,
   setDefaultCompanyProfile,
 } from '../services/settingsService';
+
+import {
+  applyPresetImportMode,
+  ensureSingleDefaultPreset,
+  exportPresetSmartCsv,
+  getPresetImportConflictCount,
+  parsePresetSmartCsv,
+} from '../services/presetBackupService';
 
 const BRAND_COLOR = '#fd4475';
 const SUCCESS_COLOR = '#16a34a';
@@ -73,9 +87,35 @@ const buildCompanyContact = (email, phone) => {
   return lines.join('\n');
 };
 
-export default function CompanySettingsScreen() {
+const prepareCompanyProfilesForSave = (items = []) => {
+  const normalizedItems = items.map((item) => {
+    const normalized = normalizeCompanyProfile(item);
+
+    return {
+      ...normalized,
+      companyContact: buildCompanyContact(
+        normalized.companyEmail,
+        normalized.companyPhone
+      ),
+    };
+  });
+
+  return ensureSingleDefaultPreset(normalizedItems);
+};
+
+export default function CompanySettingsScreen({ navigation }) {
   const [profiles, setProfiles] = useState([]);
   const [form, setForm] = useState(emptyForm);
+
+  // ======================================================
+  // COMPANY PRESET BACKUP STATES
+  // NEW:
+  // Only for Company Information export/import/select backup.
+  // Existing save/edit/delete/default/logo logic is untouched.
+  // ======================================================
+  const [isBackupBusy, setIsBackupBusy] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedProfileIds, setSelectedProfileIds] = useState([]);
 
   const isEditMode = Boolean(form.id);
 
@@ -97,6 +137,27 @@ export default function CompanySettingsScreen() {
 
   const resetForm = () => {
     setForm(emptyForm);
+  };
+
+  const getCompanyProfileId = (item) => {
+    return item?.id || '';
+  };
+
+  const getCompanyDisplayName = (item) => {
+    return item?.companyName || item?.title || 'Company Name';
+  };
+
+  const getCompanySubDisplay = (item) => {
+    return item?.title || item?.companyEmail || item?.companyPhone || 'Company Profile';
+  };
+
+  const selectedProfiles = profiles.filter((item) =>
+    selectedProfileIds.includes(getCompanyProfileId(item))
+  );
+
+  const clearBackupSelection = () => {
+    setSelectedProfileIds([]);
+    setIsSelectMode(false);
   };
 
   const pickLogo = async () => {
@@ -168,6 +229,7 @@ export default function CompanySettingsScreen() {
   };
 
   const handleEdit = (item) => {
+    clearBackupSelection();
     setForm(normalizeCompanyProfile(item));
   };
 
@@ -199,6 +261,9 @@ export default function CompanySettingsScreen() {
           onPress: async () => {
             const updatedProfiles = await deleteCompanyProfile(id);
             setProfiles(updatedProfiles.map(normalizeCompanyProfile));
+            setSelectedProfileIds((prev) =>
+              prev.filter((itemId) => itemId !== id)
+            );
 
             if (form.id === id) {
               resetForm();
@@ -214,9 +279,300 @@ export default function CompanySettingsScreen() {
     setProfiles(updatedProfiles.map(normalizeCompanyProfile));
   };
 
+  // ======================================================
+  // COMPANY PRESET BACKUP HELPERS
+  // NEW:
+  // Smart CSV export/import for Company Information only.
+  // Logo/base64 is kept inside Smart CSV data when available.
+  // Quotation / Invoice logic is not touched.
+  // ======================================================
+  const handleToggleSelectMode = () => {
+    setIsSelectMode((prev) => {
+      const nextValue = !prev;
+
+      if (!nextValue) {
+        setSelectedProfileIds([]);
+      }
+
+      return nextValue;
+    });
+  };
+
+  const handleToggleSelectProfile = (item) => {
+    const profileId = getCompanyProfileId(item);
+
+    if (!profileId) return;
+
+    setSelectedProfileIds((prev) => {
+      if (prev.includes(profileId)) {
+        return prev.filter((id) => id !== profileId);
+      }
+
+      return [...prev, profileId];
+    });
+  };
+
+  const exportCompanyProfiles = async (
+    itemsToExport = [],
+    exportType = 'all'
+  ) => {
+    try {
+      const result = await exportPresetSmartCsv({
+        items: itemsToExport,
+        filePrefix: `company_profiles_${exportType}`,
+        emptyMessage: 'There are no company profiles to export.',
+      });
+
+      if (!result.success && result.reason === 'empty') {
+        Alert.alert('No Data', result.message);
+        return;
+      }
+
+      if (result.success && !result.sharingAvailable) {
+        Alert.alert('Export Ready', `CSV file saved at: ${result.fileUri}`);
+      }
+    } catch (error) {
+      console.log('Company Profile Export Error:', error);
+      Alert.alert('Export Error', 'Company profile CSV could not be exported.');
+    }
+  };
+
+  const handleExportAllCompanies = () => {
+    exportCompanyProfiles(profiles, 'all');
+  };
+
+  const handleExportSelectedCompanies = () => {
+    if (selectedProfiles.length === 0) {
+      Alert.alert('No Selection', 'Please select at least one company profile.');
+      return;
+    }
+
+    exportCompanyProfiles(selectedProfiles, 'selected');
+  };
+
+  const handleExportSingleCompany = (item) => {
+    exportCompanyProfiles([item], item?.title || item?.companyName || 'single');
+  };
+
+  const applyImportedCompanyProfiles = async (
+    itemsToImport = [],
+    mode = 'skip'
+  ) => {
+    try {
+      setIsBackupBusy(true);
+
+      const normalizedImports = itemsToImport.map(normalizeCompanyProfile);
+
+      const { importedItems, nextItems } = applyPresetImportMode({
+        existingItems: profiles,
+        importedItems: normalizedImports,
+        mode,
+        idPrefix: 'company_profile',
+      });
+
+      if (!importedItems.length) {
+        Alert.alert(
+          'No New Companies',
+          'No company profiles were imported with the selected conflict option.'
+        );
+        return;
+      }
+
+      const normalizedNextItems = prepareCompanyProfilesForSave(nextItems);
+      const savedProfiles = await saveCompanyProfiles(normalizedNextItems);
+
+      setProfiles(savedProfiles.map(normalizeCompanyProfile));
+      clearBackupSelection();
+
+      Alert.alert(
+        'Import Complete',
+        `Imported ${importedItems.length} company profile(s).`
+      );
+    } catch (error) {
+      console.log('Company Profile Import Apply Error:', error);
+      Alert.alert('Import Error', 'Company profile CSV could not be imported.');
+    } finally {
+      setIsBackupBusy(false);
+    }
+  };
+
+  const handleImportCompanyCsv = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const fileUri = result.assets?.[0]?.uri;
+
+      if (!fileUri) {
+        Alert.alert('Import Error', 'No file selected.');
+        return;
+      }
+
+      setIsBackupBusy(true);
+
+      const fileContent = await FileSystem.readAsStringAsync(fileUri);
+      const parsedItems = parsePresetSmartCsv(fileContent);
+
+      setIsBackupBusy(false);
+
+      if (!parsedItems.length) {
+        Alert.alert('Import Error', 'No valid company profile data found.');
+        return;
+      }
+
+      const conflictCount = getPresetImportConflictCount({
+        existingItems: profiles,
+        importedItems: parsedItems,
+        idPrefix: 'company_profile',
+      });
+
+      if (conflictCount > 0) {
+        Alert.alert(
+          'Import Conflicts Found',
+          `${conflictCount} duplicate/conflict company profile(s) found. What do you want to do?`,
+          [
+            {
+              text: 'Skip Duplicates',
+              onPress: () => applyImportedCompanyProfiles(parsedItems, 'skip'),
+            },
+            {
+              text: 'Replace Existing',
+              onPress: () =>
+                applyImportedCompanyProfiles(parsedItems, 'replace'),
+            },
+            {
+              text: 'Keep Both',
+              onPress: () =>
+                applyImportedCompanyProfiles(parsedItems, 'keepBoth'),
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+          ]
+        );
+
+        return;
+      }
+
+      await applyImportedCompanyProfiles(parsedItems, 'skip');
+    } catch (error) {
+      console.log('Company Profile Import Error:', error);
+      setIsBackupBusy(false);
+      Alert.alert('Import Error', 'Company profile CSV could not be imported.');
+    }
+  };
+
+  const renderHeaderRightButton = () => {
+    if (isEditMode) {
+      return (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={[styles.headerIconButton, styles.headerIconButtonLight]}
+          onPress={resetForm}
+        >
+          <Ionicons name="close" size={24} color={BRAND_COLOR} />
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View style={[styles.headerIconButton, styles.headerIconButtonLight]}>
+        <Ionicons name="business-outline" size={25} color={BRAND_COLOR} />
+      </View>
+    );
+  };
+
+  const renderCompanyRightTop = (item) => {
+    const isSelected = selectedProfileIds.includes(item.id);
+
+    if (isSelectMode) {
+      return (
+        <TouchableOpacity
+          activeOpacity={0.82}
+          style={styles.selectCircleTouchable}
+          onPress={() => handleToggleSelectProfile(item)}
+        >
+          <View
+            style={[
+              styles.selectCircle,
+              isSelected && styles.selectCircleActive,
+            ]}
+          >
+            {isSelected ? (
+              <Ionicons name="checkmark" size={15} color="#ffffff" />
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    if (item.isDefault) {
+      return (
+        <View style={styles.defaultBadgeTop}>
+          <Text style={styles.defaultBadgeTopText}>Default</Text>
+        </View>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={() => handleSetDefault(item.id)}
+      >
+        <Text style={styles.setDefaultTopText}>Set as default</Text>
+      </TouchableOpacity>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right', 'bottom']}
+    >
+      <StatusBar barStyle="light-content" backgroundColor={BRAND_COLOR} />
+
+      {/* ======================================================
+          COMPANY SETTINGS CUSTOM HEADER
+          NEW:
+          Replaces default native stack header and removes double title.
+          Style follows Client / Invoice / Quotation pink header direction.
+      ====================================================== */}
+      <LinearGradient
+        colors={[BRAND_COLOR, '#ff74a0', '#fff3f7']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.headerIconButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#ffffff" />
+          </TouchableOpacity>
+
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerTitle}>
+              {isEditMode ? 'Edit Company' : 'Company Information'}
+            </Text>
+            <Text style={styles.headerSubtitle}>
+              {isEditMode
+                ? 'Update saved company information'
+                : 'Manage reusable company presets'}
+            </Text>
+          </View>
+
+          {renderHeaderRightButton()}
+        </View>
+      </LinearGradient>
 
       <ScrollView
         style={styles.container}
@@ -224,30 +580,113 @@ export default function CompanySettingsScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={[styles.topInfoCard, isEditMode && styles.topInfoCardEdit]}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.pageTitle}>
-              {isEditMode ? 'Edit Company' : 'Company Information'}
-            </Text>
+        {/* ======================================================
+            COMPANY PRESET BACKUP UI
+            CSV backup/import/export for Company Profiles only.
+            Hidden while editing to avoid UI conflict.
+        ====================================================== */}
+        {!isEditMode ? (
+          <View style={styles.backupCard}>
+            <View style={styles.backupHeaderRow}>
+              <View style={styles.backupIconBox}>
+                <Ionicons
+                  name="cloud-upload-outline"
+                  size={20}
+                  color={BRAND_COLOR}
+                />
+              </View>
 
-            <Text style={styles.pageSubtitle}>
-              {isEditMode
-                ? 'You are editing a saved company profile.'
-                : 'Save company profiles and use them while creating quotations.'}
-            </Text>
+              <View style={styles.backupTitleArea}>
+                <Text style={styles.backupTitle}>Company Backup</Text>
+                <Text style={styles.backupSubtitle}>
+                  Export, select, or import company profiles as CSV.
+                </Text>
+              </View>
+
+              {isBackupBusy ? (
+                <ActivityIndicator size="small" color={BRAND_COLOR} />
+              ) : null}
+            </View>
+
+            <View style={styles.backupButtonRow}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.backupButton}
+                onPress={handleExportAllCompanies}
+                disabled={isBackupBusy}
+              >
+                <Ionicons
+                  name="cloud-download-outline"
+                  size={15}
+                  color={BRAND_COLOR}
+                />
+                <Text style={styles.backupButtonText}>Export All</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.backupButton}
+                onPress={handleToggleSelectMode}
+                disabled={isBackupBusy}
+              >
+                <Ionicons
+                  name={
+                    isSelectMode
+                      ? 'checkmark-circle-outline'
+                      : 'checkbox-outline'
+                  }
+                  size={15}
+                  color={BRAND_COLOR}
+                />
+                <Text style={styles.backupButtonText}>
+                  {isSelectMode ? 'Selecting' : 'Select'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[styles.backupButton, styles.backupButtonPrimary]}
+                onPress={handleImportCompanyCsv}
+                disabled={isBackupBusy}
+              >
+                <Ionicons
+                  name="cloud-upload-outline"
+                  size={15}
+                  color="#ffffff"
+                />
+                <Text style={styles.backupButtonPrimaryText}>Import</Text>
+              </TouchableOpacity>
+            </View>
+
+            {isSelectMode ? (
+              <View style={styles.selectionBackupRow}>
+                <View style={styles.selectedCountPill}>
+                  <Text style={styles.selectedCountText}>
+                    {selectedProfileIds.length} Selected
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={styles.exportSelectedButton}
+                  onPress={handleExportSelectedCompanies}
+                  disabled={isBackupBusy}
+                >
+                  <Text style={styles.exportSelectedText}>Export Selected</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={styles.clearSelectionButton}
+                  onPress={clearBackupSelection}
+                  disabled={isBackupBusy}
+                >
+                  <Text style={styles.clearSelectionText}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
-
-          {isEditMode ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.cancelEditButton}
-              onPress={resetForm}
-            >
-              <Ionicons name="close" size={16} color="#f97316" />
-              <Text style={styles.cancelEditButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        ) : null}
 
         <View style={[styles.formCard, isEditMode && styles.formCardEdit]}>
           <View style={styles.formHeader}>
@@ -267,7 +706,7 @@ export default function CompanySettingsScreen() {
               <Text style={styles.formSubtitle}>
                 {isEditMode
                   ? 'Update this saved company information.'
-                  : 'This information can be reused in quotation forms.'}
+                  : 'This information can be reused in quotation and invoice forms.'}
               </Text>
             </View>
           </View>
@@ -366,7 +805,7 @@ export default function CompanySettingsScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.defaultTitle}>Set as Default</Text>
               <Text style={styles.defaultSubtitle}>
-                Use this company automatically for new quotations.
+                Use this company automatically for new quotations and invoices.
               </Text>
             </View>
 
@@ -437,79 +876,83 @@ export default function CompanySettingsScreen() {
             ) : (
               profiles.map((item) => (
                 <View key={item.id} style={styles.savedCard}>
-                  <View style={styles.savedIconBox}>
-                    {item.logo ? (
-                      <Image
-                        source={{ uri: item.logo }}
-                        style={styles.savedLogo}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <Ionicons
-                        name="business-outline"
-                        size={24}
-                        color={BRAND_COLOR}
-                      />
-                    )}
-                  </View>
-
-                  <View style={styles.savedInfo}>
-                    <View style={styles.savedNameRow}>
-                      <Text style={styles.savedName} numberOfLines={1}>
-                        {item.title}
-                      </Text>
-
-                      {item.isDefault ? (
-                        <View style={styles.defaultBadge}>
-                          <Text style={styles.defaultBadgeText}>Default</Text>
-                        </View>
-                      ) : null}
+                  <View style={styles.savedTopRow}>
+                    <View style={styles.savedIconBox}>
+                      {item.logo ? (
+                        <Image
+                          source={{ uri: item.logo }}
+                          style={styles.savedLogo}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Ionicons
+                          name="business-outline"
+                          size={32}
+                          color={BRAND_COLOR}
+                        />
+                      )}
                     </View>
 
-                    <Text style={styles.savedSubText} numberOfLines={1}>
-                      {item.companyName}
-                    </Text>
+                    <View style={styles.savedInfo}>
+                      <Text style={styles.savedName} numberOfLines={1}>
+                        {getCompanyDisplayName(item)}
+                      </Text>
 
-                    {!item.isDefault ? (
-                      <TouchableOpacity
-                        activeOpacity={0.75}
-                        onPress={() => handleSetDefault(item.id)}
-                      >
-                        <Text style={styles.setDefaultText}>Set as default</Text>
-                      </TouchableOpacity>
-                    ) : null}
+                      <Text style={styles.savedSubText} numberOfLines={1}>
+                        {getCompanySubDisplay(item)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.savedRightTop}>
+                      {renderCompanyRightTop(item)}
+                    </View>
                   </View>
 
-                  <View style={styles.actionButtons}>
+                  <View style={styles.savedActionRow}>
                     <TouchableOpacity
-                      style={styles.smallActionButton}
+                      activeOpacity={0.85}
+                      style={styles.savedActionButton}
                       onPress={() => handleView(item)}
                     >
                       <Ionicons
                         name="eye-outline"
-                        size={16}
+                        size={17}
                         color={BRAND_COLOR}
                       />
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.smallActionButton}
+                      activeOpacity={0.85}
+                      style={styles.savedActionButton}
                       onPress={() => handleEdit(item)}
                     >
                       <Ionicons
                         name="create-outline"
-                        size={16}
+                        size={17}
                         color={BRAND_COLOR}
                       />
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={styles.smallActionButton}
+                      activeOpacity={0.85}
+                      style={styles.savedActionButton}
+                      onPress={() => handleExportSingleCompany(item)}
+                    >
+                      <Ionicons
+                        name="download-outline"
+                        size={17}
+                        color="#0ea5e9"
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      style={styles.savedActionButton}
                       onPress={() => handleDelete(item.id)}
                     >
                       <Ionicons
                         name="trash-outline"
-                        size={16}
+                        size={17}
                         color="#ef4444"
                       />
                     </TouchableOpacity>

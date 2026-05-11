@@ -99,6 +99,103 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
 
+  // ======================================================
+  // INVOICE SIDE SAVED EDIT NOTICE CARD
+  // NEW:
+  // Shown only for Invoice History -> Edit mode.
+  // Matches the orange notice pattern used by Edit Quotation.
+  // ======================================================
+  editModeTopCard: {
+    backgroundColor: '#fff7ed',
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    elevation: 4,
+    shadowColor: '#111827',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+  },
+
+  editModeIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 15,
+    backgroundColor: '#ffedd5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  editModeContent: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  editModeTitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '900',
+    color: '#7c2d12',
+  },
+
+  editModeSubtitle: {
+    marginTop: 2,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: '#9a3412',
+    fontWeight: '600',
+  },
+
+  editModeBadge: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffedd5',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+
+  editModeBadgeText: {
+    marginLeft: 5,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '900',
+    color: '#f97316',
+  },
+
+  cancelEditButton: {
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: '#ffedd5',
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+  },
+
+  cancelEditButtonText: {
+    marginLeft: 3,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '900',
+    color: '#f97316',
+  },
+
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

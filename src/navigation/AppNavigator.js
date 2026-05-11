@@ -31,8 +31,8 @@ import InvoiceHistoryScreen from '../screens/InvoiceHistoryScreen';
 
 import DraftQuotationScreen from '../screens/DraftQuotationScreen';
 
-
 import FloatingQuickButtonSettingsScreen from '../screens/FloatingQuickButtonSettingsScreen';
+
 // ======================================================
 // FLOATING QUICK BUTTON MODULE START
 // Safe optional module.
@@ -126,7 +126,7 @@ export default function AppNavigator() {
           component={InvoicePreviewScreen}
           options={{ headerShown: false }}
         />
-        
+
         <Stack.Screen
           name="InvoiceDraft"
           component={InvoiceDraftScreen}
@@ -166,50 +166,50 @@ export default function AppNavigator() {
         <Stack.Screen
           name="CompanySettings"
           component={CompanySettingsScreen}
-          options={{ title: 'Company Information' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="ClientSettings"
           component={ClientSettingsScreen}
-          options={{ title: 'Client Profiles' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="ItemsCatalogSettings"
           component={ItemsCatalogSettingsScreen}
-          options={{ title: 'Items Catalog' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="PaymentSettings"
           component={PaymentSettingsScreen}
-          options={{ title: 'Payment Terms & Method' }}
+           options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="MobilePaymentSettings"
           component={MobilePaymentSettingsScreen}
-          options={{ title: 'Mobile Payment Info' }}
+           options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="SignatureSettings"
           component={SignatureSettingsScreen}
-          options={{ title: 'Signature' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="NotesSettings"
           component={NotesSettingsScreen}
-          options={{ title: 'Notes' }}
+          options={{ headerShown: false }}
         />
+
         <Stack.Screen
           name="FloatingQuickButtonSettings"
           component={FloatingQuickButtonSettingsScreen}
           options={{ title: 'Floating Quick Button' }}
         />
-
       </Stack.Navigator>
 
       {/* ======================================================

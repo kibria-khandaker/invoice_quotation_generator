@@ -20,11 +20,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import styles, { BRAND_COLOR } from './HistoryScreenStyle';
 
-import { getQuotations, deleteQuotation } from '../services/storageService';
+import {
+  getQuotations,
+  deleteQuotation,
+  saveAllQuotations,
+} from '../services/storageService';
 import { generatePDF } from '../services/pdfService';
 
 export default function HistoryScreen({ navigation }) {
@@ -263,6 +266,14 @@ export default function HistoryScreen({ navigation }) {
   const exportAllSmartCSV = () => exportSmartCSV(list);
 
   // ========================================================
+  // QUOTATION HISTORY BACKUP PARITY
+  // NEW:
+  // Export only the currently filtered/search result list.
+  // Existing Full Backup and Selected CSV export are untouched.
+  // ========================================================
+  const exportFilteredSmartCSV = () => exportSmartCSV(filteredList);
+
+  // ========================================================
   // 6. IMPORT & BULK DELETE LOGIC
   // ========================================================
   const handleImportCSV = async () => {
@@ -340,20 +351,14 @@ export default function HistoryScreen({ navigation }) {
         importedItems.forEach((newItem) => {
           const index = newList.findIndex((old) => old.id === newItem.id);
 
-          index !== -1 ? (newList[index] = newItem) : newList.push(newItem);
-        });
-
-        updatedList = newList;
-      } else if (mode === 'merge') {
-        const merged = [...list];
-
-        importedItems.forEach((item) => {
-          if (!merged.find((i) => i.id === item.id)) {
-            merged.push(item);
+          if (index !== -1) {
+            newList[index] = newItem;
+          } else {
+            newList.unshift(newItem);
           }
         });
 
-        updatedList = merged;
+        updatedList = newList;
       } else if (mode === 'skip') {
         const filtered = importedItems.filter(
           (newItem) => !list.find((old) => old.id === newItem.id)
@@ -363,27 +368,31 @@ export default function HistoryScreen({ navigation }) {
       } else if (mode === 'keep_both') {
         const keepBoth = [...list];
 
-        importedItems.forEach((item) => {
+        importedItems.forEach((item, index) => {
           if (keepBoth.find((i) => i.id === item.id)) {
-            keepBoth.push({
+            keepBoth.unshift({
               ...item,
-              id: item.id + '_' + Date.now(),
-              clientName: item.clientName + ' (copy)',
+              id: `${item.id}_${Date.now()}_${index}`,
+              clientName: `${item.clientName || 'Quotation'} (copy)`,
             });
           } else {
-            keepBoth.push(item);
+            keepBoth.unshift(item);
           }
         });
 
         updatedList = keepBoth;
       }
 
-      await AsyncStorage.setItem(
-        'QUOTATIONS_HISTORY',
-        JSON.stringify(updatedList)
-      );
+      const success = await saveAllQuotations(updatedList);
+
+      if (!success) {
+        Alert.alert('Error', 'Import failed while saving quotations.');
+        return;
+      }
 
       setList(updatedList);
+      setPendingFileUri(null);
+      setImportHasConflict(false);
       Alert.alert('Import Complete', `${importedItems.length} items processed`);
     } catch (error) {
       console.log('Import Error:', error);
@@ -644,7 +653,18 @@ export default function HistoryScreen({ navigation }) {
 
         <Text style={styles.historyHeaderTitle}>Quotation History</Text>
 
-        <View style={styles.historyHeaderSpacer} />
+        {/* ======================================================
+            QUOTATION HISTORY HEADER ACTION
+            NEW:
+            Create shortcut only. Existing back/history logic is untouched.
+        ====================================================== */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('Create')}
+          style={styles.historyHeaderCreateButton}
+        >
+          <Ionicons name="add" size={24} color="#ffffff" />
+        </TouchableOpacity>
       </LinearGradient>
 
       {/* ----------------------------------------------------
@@ -1041,6 +1061,13 @@ export default function HistoryScreen({ navigation }) {
               </TouchableOpacity>
 
               <TouchableOpacity
+                onPress={exportFilteredSmartCSV}
+                style={[styles.backupButton, styles.filteredBackupButton]}
+              >
+                <Text style={styles.backupButtonText}>Export Filtered</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 onPress={handleImportCSV}
                 style={[styles.backupButton, styles.importButton]}
               >
@@ -1149,16 +1176,7 @@ export default function HistoryScreen({ navigation }) {
                   importSmartCSV(pendingFileUri, 'replace');
                 }}
               >
-                <Text style={styles.importOptionText}>Replace Matching</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  setShowImportModal(false);
-                  importSmartCSV(pendingFileUri, 'merge');
-                }}
-              >
-                <Text style={styles.importOptionText}>Merge All</Text>
+                <Text style={styles.importOptionText}>Replace Existing</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1176,7 +1194,7 @@ export default function HistoryScreen({ navigation }) {
             <TouchableOpacity
               onPress={() => {
                 setShowImportModal(false);
-                importSmartCSV(pendingFileUri, 'merge');
+                importSmartCSV(pendingFileUri, 'skip');
               }}
             >
               <Text style={styles.importProceedText}>Proceed with Import</Text>

@@ -64,6 +64,10 @@ const safeText = (value, fallback = '') => {
   return String(value);
 };
 
+const getDraftId = (item) => {
+  return safeText(item?.draftId || item?.id).trim();
+};
+
 const getDraftDisplayTitle = (item) => {
   return (
     safeText(item?.draftTitle).trim() ||
@@ -113,6 +117,15 @@ export default function DraftQuotationScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
+  // ======================================================
+  // QUOTATION DRAFT SELECT STATES
+  // NEW:
+  // Adds checkbox/select parity without changing Continue,
+  // Preview, Delete, Draft cleanup, or storage logic.
+  // ======================================================
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedDraftIds, setSelectedDraftIds] = useState([]);
+
   useLayoutEffect(() => {
     navigation?.setOptions?.({
       headerShown: false,
@@ -126,7 +139,13 @@ export default function DraftQuotationScreen({ navigation }) {
     try {
       setLoading(true);
       const data = await getDraftQuotations();
-      setDrafts(Array.isArray(data) ? data : []);
+      const nextDrafts = Array.isArray(data) ? data : [];
+      const existingIds = new Set(nextDrafts.map(getDraftId).filter(Boolean));
+
+      setDrafts(nextDrafts);
+      setSelectedDraftIds((prev) =>
+        prev.filter((draftId) => existingIds.has(draftId))
+      );
     } catch (error) {
       console.log('Load drafts error:', error);
       setDrafts([]);
@@ -165,12 +184,90 @@ export default function DraftQuotationScreen({ navigation }) {
     return searchableText.includes(query);
   });
 
+  const filteredDraftIds = filteredDrafts.map(getDraftId).filter(Boolean);
+
+  const selectedDrafts = drafts.filter((item) =>
+    selectedDraftIds.includes(getDraftId(item))
+  );
+
   // ======================================================
   // ACTIONS
   // ======================================================
   const handleRefresh = async () => {
     setSearch('');
     await loadDrafts();
+  };
+
+  const clearSelection = () => {
+    setSelectedDraftIds([]);
+    setIsSelectMode(false);
+  };
+
+  const handleToggleSelectMode = () => {
+    setIsSelectMode((prev) => {
+      const nextValue = !prev;
+
+      if (!nextValue) {
+        setSelectedDraftIds([]);
+      }
+
+      return nextValue;
+    });
+  };
+
+  const handleToggleDraftSelection = (item) => {
+    const draftId = getDraftId(item);
+
+    if (!draftId) {
+      return;
+    }
+
+    setSelectedDraftIds((prev) => {
+      if (prev.includes(draftId)) {
+        return prev.filter((id) => id !== draftId);
+      }
+
+      return [...prev, draftId];
+    });
+  };
+
+  const handleSelectAllFilteredDrafts = () => {
+    if (filteredDraftIds.length === 0) {
+      Alert.alert('No Drafts', 'There are no visible drafts to select.');
+      return;
+    }
+
+    setIsSelectMode(true);
+    setSelectedDraftIds(filteredDraftIds);
+  };
+
+  const handleDeleteSelectedDrafts = () => {
+    if (selectedDrafts.length === 0) {
+      Alert.alert('No Selection', 'Please select at least one draft.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Selected Drafts',
+      `Are you sure you want to delete ${selectedDrafts.length} selected draft(s)?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Selected',
+          style: 'destructive',
+          onPress: async () => {
+            const selectedIds = [...selectedDraftIds];
+
+            for (const draftId of selectedIds) {
+              await deleteDraftQuotation(draftId);
+            }
+
+            clearSelection();
+            await loadDrafts();
+          },
+        },
+      ]
+    );
   };
 
   const handleDeleteDraft = (item) => {
@@ -193,6 +290,9 @@ export default function DraftQuotationScreen({ navigation }) {
             const success = await deleteDraftQuotation(draftId);
 
             if (success) {
+              setSelectedDraftIds((prev) =>
+                prev.filter((selectedId) => selectedId !== draftId)
+              );
               await loadDrafts();
             } else {
               Alert.alert('Error', 'Could not delete draft.');
@@ -222,6 +322,7 @@ export default function DraftQuotationScreen({ navigation }) {
 
             if (success) {
               setDrafts([]);
+              clearSelection();
             } else {
               Alert.alert('Error', 'Could not clear drafts.');
             }
@@ -240,10 +341,12 @@ export default function DraftQuotationScreen({ navigation }) {
 
   const handlePreviewDraft = (item) => {
     const previewData = buildQuotationPreviewDataFromDraft(item);
+    const sourceDraftId = item?.draftId || item?.id || null;
 
     navigation.navigate('Preview', {
       quotationData: previewData,
       mode: 'draftPreview',
+      sourceDraftId,
     });
   };
 
@@ -251,6 +354,8 @@ export default function DraftQuotationScreen({ navigation }) {
   // RENDER ITEM
   // ======================================================
   const renderDraftItem = ({ item }) => {
+    const draftId = getDraftId(item);
+    const isSelected = selectedDraftIds.includes(draftId);
     const title = getDraftDisplayTitle(item);
     const firstItemName = getFirstMeaningfulItemName(item);
     const updatedDate = item?.updatedAt || item?.createdAt;
@@ -284,13 +389,32 @@ export default function DraftQuotationScreen({ navigation }) {
             </View>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.deleteButton}
-            onPress={() => handleDeleteDraft(item)}
-          >
-            <Ionicons name="trash-outline" size={20} color="#dc3545" />
-          </TouchableOpacity>
+          {isSelectMode ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.selectCircleButton}
+              onPress={() => handleToggleDraftSelection(item)}
+            >
+              <View
+                style={[
+                  styles.selectCircle,
+                  isSelected && styles.selectCircleActive,
+                ]}
+              >
+                {isSelected ? (
+                  <Ionicons name="checkmark" size={15} color="#ffffff" />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.deleteButton}
+              onPress={() => handleDeleteDraft(item)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#dc3545" />
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.infoRow}>
@@ -318,7 +442,7 @@ export default function DraftQuotationScreen({ navigation }) {
         </View>
 
         <View style={styles.cardDivider} />
-
+ 
         <View style={styles.cardActions}>
           <TouchableOpacity
             activeOpacity={0.88}
@@ -326,18 +450,10 @@ export default function DraftQuotationScreen({ navigation }) {
             onPress={() => handleContinueDraft(item)}
           >
             <Ionicons name="create-outline" size={15} color="#ffffff" />
-            <Text style={styles.cardActionButtonText}>Continue</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.88}
-            style={[styles.cardActionButton, styles.previewButton]}
-            onPress={() => handlePreviewDraft(item)}
-          >
-            <Ionicons name="eye-outline" size={15} color="#7b4cc2" />
-            <Text style={styles.previewButtonText}>Preview</Text>
+            <Text style={styles.cardActionButtonText}>Continue Editing</Text>
           </TouchableOpacity>
         </View>
+
       </View>
     );
   };
@@ -420,6 +536,29 @@ export default function DraftQuotationScreen({ navigation }) {
 
           <TouchableOpacity
             activeOpacity={0.85}
+            style={[
+              styles.selectToggleButton,
+              isSelectMode && styles.selectToggleButtonActive,
+            ]}
+            onPress={handleToggleSelectMode}
+          >
+            <Ionicons
+              name={isSelectMode ? 'checkmark-circle-outline' : 'checkbox-outline'}
+              size={14}
+              color={isSelectMode ? '#ffffff' : BRAND_COLOR}
+            />
+            <Text
+              style={[
+                styles.selectToggleText,
+                isSelectMode && styles.selectToggleTextActive,
+              ]}
+            >
+              {isSelectMode ? 'Selecting' : 'Select'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
             style={styles.clearAllButton}
             onPress={handleClearAllDrafts}
           >
@@ -427,6 +566,40 @@ export default function DraftQuotationScreen({ navigation }) {
             <Text style={styles.clearAllText}>Clear All</Text>
           </TouchableOpacity>
         </View>
+
+        {isSelectMode ? (
+          <View style={styles.selectionActionRow}>
+            <View style={styles.selectedCountPill}>
+              <Text style={styles.selectedCountText}>
+                {selectedDraftIds.length} Selected
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.selectAllButton}
+              onPress={handleSelectAllFilteredDrafts}
+            >
+              <Text style={styles.selectAllText}>Select All</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.deleteSelectedButton}
+              onPress={handleDeleteSelectedDrafts}
+            >
+              <Text style={styles.deleteSelectedText}>Delete Selected</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.clearSelectionButton}
+              onPress={clearSelection}
+            >
+              <Text style={styles.clearSelectionText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
 
       {/* LIST */}

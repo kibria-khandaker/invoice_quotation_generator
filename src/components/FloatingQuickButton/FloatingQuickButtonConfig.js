@@ -39,24 +39,6 @@ export const FLOATING_QUICK_BUTTON_MENU_ITEMS = [
     hideOnRoutes: ['Create'],
   },
   {
-    id: 'quotationHistory',
-    title: 'Quotation History',
-    route: 'History',
-    icon: 'time-outline',
-    hideOnRoutes: ['History'],
-  },
-  {
-    id: 'quotationDrafts',
-    title: 'Quotation Drafts',
-    route: 'DraftQuotation',
-    icon: 'file-tray-full-outline',
-    hideOnRoutes: ['DraftQuotation'],
-  },
-
-  // ======================================================
-  // INVOICE SIDE MAIN FLOW
-  // ======================================================
-  {
     id: 'createInvoice',
     title: 'Create Invoice',
     route: 'CreateInvoice',
@@ -64,15 +46,30 @@ export const FLOATING_QUICK_BUTTON_MENU_ITEMS = [
     hideOnRoutes: ['CreateInvoice'],
   },
   {
+    id: 'quotationHistory',
+    title: 'History Quotation',
+    route: 'History',
+    icon: 'time-outline',
+    hideOnRoutes: ['History'],
+  },
+    {
     id: 'invoiceHistory',
-    title: 'Invoice History',
+    title: 'History Invoice',
     route: 'InvoiceHistory',
     icon: 'archive-outline',
     hideOnRoutes: ['InvoiceHistory'],
   },
+
+  {
+    id: 'quotationDrafts',
+    title: 'Drafts Quotation',
+    route: 'DraftQuotation',
+    icon: 'file-tray-full-outline',
+    hideOnRoutes: ['DraftQuotation'],
+  },
   {
     id: 'invoiceDrafts',
-    title: 'Invoice Drafts',
+    title: 'Drafts Invoice',
     route: 'InvoiceDraft',
     icon: 'file-tray-full-outline',
     hideOnRoutes: ['InvoiceDraft'],

@@ -3,13 +3,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ==================================================
-// QUOTATION SIDE STORAGE
-// IMPORTANT:
-// Existing Quotation logic is preserved.
-// Do not rename or change these keys/functions unless needed.
-// ==================================================
-
-// ==================================================
 // SINGLE SOURCE OF TRUTH
 // ==================================================
 const STORAGE_KEY = 'QUOTATIONS_HISTORY';
@@ -111,7 +104,7 @@ export const clearAllQuotations = async () => {
 };
 
 // ==================================================
-// QUOTATION SIDE DRAFT STORAGE
+// DRAFT QUOTATION STORAGE
 // IMPORTANT:
 // Drafts are stored separately from final quotation history.
 // This prevents draft items from mixing with HistoryScreen data.
@@ -222,22 +215,21 @@ export const clearDraftQuotations = async () => {
 
 // ======================================================
 // INVOICE SIDE MASTER STORAGE
-// NEW FLOW:
-//
+// FIX:
 // Single master storage for all invoice records.
 // Draft and Saved invoices stay in the same storage array,
-// but are separated by invoiceLifecycle.
+// separated by invoiceLifecycle.
 //
 // invoiceLifecycle:
 // - 'draft' = incomplete invoice, shown in InvoiceDraftScreen
-// - 'saved' = final/ready invoice, shown in InvoiceHistoryScreen
+// - 'saved' = final invoice, shown in InvoiceHistoryScreen
 //
 // IMPORTANT:
 // - Quotation storage keys/functions above are not touched.
 // - Same invoice ID updates existing record, not duplicate.
 // - Draft → Saved and Saved → Draft movement is done by
 //   changing invoiceLifecycle only.
-// - Old invoice storage key is kept only for safe migration.
+// - Old SAVED_INVOICES key is migrated safely once.
 // ======================================================
 
 const INVOICE_RECORDS_KEY = 'INVOICE_RECORDS';
@@ -326,11 +318,6 @@ export const getAllInvoiceRecords = async () => {
       return Array.isArray(parsedData) ? parsedData : [];
     }
 
-    // ======================================================
-    // INVOICE SIDE LEGACY MIGRATION
-    // If old SAVED_INVOICES data exists from previous phase,
-    // migrate it into INVOICE_RECORDS once.
-    // ======================================================
     const legacyRawData = await AsyncStorage.getItem(LEGACY_SAVED_INVOICES_KEY);
 
     if (!legacyRawData) {
@@ -369,13 +356,12 @@ export const saveAllInvoiceRecords = async (records = []) => {
   }
 };
 
-
 // ======================================================
 // INVOICE SIDE: UPSERT MASTER RECORD
 // Same invoice id updates existing record.
 // If no id match exists, invoiceNumber is used as fallback.
-// This prevents duplicate records during Draft ↔ Saved flow,
-// while keeping "Keep Both" imported invoices safe.
+// This prevents duplicates during Draft ↔ Saved flow while
+// keeping imported Keep Both records safe when they have IDs.
 // ======================================================
 export const upsertInvoiceRecord = async (
   invoiceData = {},
@@ -385,16 +371,6 @@ export const upsertInvoiceRecord = async (
     const existingRecords = await getAllInvoiceRecords();
     let preparedRecord = prepareInvoiceRecord(invoiceData, lifecycle);
 
-    // ======================================================
-    // INVOICE SIDE MATCH PRIORITY
-    // IMPORTANT:
-    // 1) First try same ID match.
-    // 2) Only if ID match is not found, use invoiceNumber fallback.
-    //
-    // This keeps normal duplicate prevention, but avoids collapsing
-    // "Keep Both" imported invoices that intentionally share the
-    // same invoiceNumber with different IDs.
-    // ======================================================
     const sameIdMatch = existingRecords.find((item) => {
       return item.id && item.id === preparedRecord.id;
     });
@@ -419,11 +395,7 @@ export const upsertInvoiceRecord = async (
     if (existingMatch) {
       preparedRecord = {
         ...preparedRecord,
-
-        // Keep the original permanent internal id.
         id: existingMatch.id,
-
-        // Keep original createdAt so update does not look like new item.
         createdAt: existingMatch.createdAt || preparedRecord.createdAt,
       };
     }
@@ -456,10 +428,8 @@ export const upsertInvoiceRecord = async (
   }
 };
 
-
 // ======================================================
 // INVOICE SIDE: GET ONLY DRAFT INVOICES
-// Used by future InvoiceDraftScreen.
 // ======================================================
 export const getInvoiceDrafts = async () => {
   try {
@@ -474,7 +444,6 @@ export const getInvoiceDrafts = async () => {
 
 // ======================================================
 // INVOICE SIDE: GET ONLY SAVED / FINAL INVOICES
-// Used by InvoiceHistoryScreen.
 // ======================================================
 export const getInvoices = async () => {
   try {
@@ -498,11 +467,7 @@ export const saveInvoiceDraft = async (invoiceData = {}) => {
 // ======================================================
 // INVOICE SIDE: SAVE FINAL / READY INVOICE
 // Complete invoice → History page.
-//
-// NOTE:
 // lifecycle parameter is kept for backward compatibility.
-// Existing calls like saveInvoice(data, 'draft') will still work,
-// but new CreateInvoiceScreen should use saveInvoiceDraft(data).
 // ======================================================
 export const saveInvoice = async (invoiceData = {}, lifecycle = 'saved') => {
   return upsertInvoiceRecord(invoiceData, lifecycle);
@@ -510,7 +475,6 @@ export const saveInvoice = async (invoiceData = {}, lifecycle = 'saved') => {
 
 // ======================================================
 // INVOICE SIDE: UPDATE RECORD BY ID
-// Keeps same id and prevents duplicate.
 // ======================================================
 export const updateInvoice = async (invoiceId, updatedData = {}) => {
   try {
@@ -533,9 +497,7 @@ export const updateInvoice = async (invoiceId, updatedData = {}) => {
         ...item,
         ...updatedData,
 
-        // Keep original permanent id.
         id: item.id,
-
         invoiceLifecycle: nextLifecycle,
         saveType: nextLifecycle,
         invoiceSaveStatus: nextLifecycle,
@@ -575,37 +537,32 @@ export const deleteInvoiceRecord = async (invoiceId) => {
 
 // ======================================================
 // INVOICE SIDE: DELETE COMPATIBILITY ALIAS
-// Existing InvoiceHistoryScreen code may already call deleteInvoice().
-// This now deletes from master storage.
+// Existing InvoiceHistoryScreen calls deleteInvoice().
 // ======================================================
 export const deleteInvoice = async (invoiceId) => {
   return deleteInvoiceRecord(invoiceId);
 };
 
-
 // ======================================================
 // INVOICE SIDE: BULK SAVE COMPATIBILITY
 // Saves provided saved/final invoices as master records.
-//
-// IMPORTANT FIX:
-// - Existing Draft invoices are preserved.
-// - This prevents CSV Import / bulk saved invoice update from
-//   accidentally deleting InvoiceDraftScreen data.
-// - If incoming records intentionally include a matching draft ID,
-//   incoming record wins to avoid duplicates.
+// Existing Draft invoices are preserved.
 // ======================================================
 export const saveAllInvoices = async (invoices = []) => {
   try {
     const existingRecords = await getAllInvoiceRecords();
 
     const normalizedIncomingRecords = invoices.map((item) =>
-      normalizeLegacyInvoiceRecord(item)
+      normalizeLegacyInvoiceRecord({
+        ...item,
+        invoiceLifecycle: 'saved',
+        saveType: 'saved',
+        invoiceSaveStatus: 'saved',
+      })
     );
 
     const incomingIds = new Set(
-      normalizedIncomingRecords
-        .map((item) => item.id)
-        .filter(Boolean)
+      normalizedIncomingRecords.map((item) => item.id).filter(Boolean)
     );
 
     const incomingInvoiceNumbers = new Set(
@@ -614,8 +571,6 @@ export const saveAllInvoices = async (invoices = []) => {
         .filter(Boolean)
     );
 
-    // Preserve existing Draft records because InvoiceHistory import
-    // normally sends only saved/final invoice list.
     const draftRecordsToKeep = existingRecords.filter((item) => {
       if (item.invoiceLifecycle !== 'draft') {
         return false;
@@ -629,10 +584,7 @@ export const saveAllInvoices = async (invoices = []) => {
       return !sameIncomingId && !sameIncomingInvoiceNumber;
     });
 
-    const nextRecords = [
-      ...normalizedIncomingRecords,
-      ...draftRecordsToKeep,
-    ];
+    const nextRecords = [...normalizedIncomingRecords, ...draftRecordsToKeep];
 
     return await saveAllInvoiceRecords(nextRecords);
   } catch (error) {
@@ -640,7 +592,6 @@ export const saveAllInvoices = async (invoices = []) => {
     return false;
   }
 };
-
 
 // ======================================================
 // INVOICE SIDE: CLEAR FINAL/SAVED INVOICES ONLY

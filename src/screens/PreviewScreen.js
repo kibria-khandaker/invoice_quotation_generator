@@ -30,7 +30,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { generatePDF } from '../services/pdfService';
-import { saveQuotation, updateQuotation } from '../services/storageService';
+import {
+  saveQuotation,
+  updateQuotation,
+  deleteDraftQuotation,
+} from '../services/storageService';
 import * as Sharing from 'expo-sharing';
 
 import styles, { BRAND_COLOR } from './PreviewScreenStyle';
@@ -195,6 +199,28 @@ export default function PreviewScreen({ route, navigation }) {
 
   const data = params.quotationData || params.data || params;
 
+  // ======================================================
+  // QUOTATION DRAFT CLEANUP SUPPORT
+  // NEW:
+  // If Preview came from a draft, sourceDraftId is used only
+  // after successful final save to remove that draft.
+  // It is stripped from final History/PDF data.
+  // ======================================================
+  const sourceDraftId = params.sourceDraftId || data.sourceDraftId || null;
+
+  const getCleanFinalQuotationData = (quotationData = data) => {
+    const {
+      sourceDraftId: _sourceDraftId,
+      draftId: _draftId,
+      draftTitle: _draftTitle,
+      isDraft: _isDraft,
+      status: _status,
+      ...cleanData
+    } = quotationData || {};
+
+    return cleanData;
+  };
+
   const isHistoryViewMode = screenMode === 'historyView';
 
   const headerTitle = isHistoryViewMode
@@ -247,7 +273,7 @@ export default function PreviewScreen({ route, navigation }) {
 
   const handleGeneratePDF = async () => {
     try {
-      const uri = await generatePDF(data);
+      const uri = await generatePDF(getCleanFinalQuotationData(data));
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri);
@@ -260,12 +286,13 @@ export default function PreviewScreen({ route, navigation }) {
   const handleSaveQuotation = async () => {
     const performSave = async () => {
       let success = false;
+      const cleanQuotationData = getCleanFinalQuotationData(data);
 
-      if (data.id) {
-        success = await updateQuotation(data);
+      if (cleanQuotationData.id) {
+        success = await updateQuotation(cleanQuotationData);
       } else {
         const newData = {
-          ...data,
+          ...cleanQuotationData,
           id: Date.now().toString(),
           createdAt: new Date().toISOString(),
         };
@@ -274,7 +301,20 @@ export default function PreviewScreen({ route, navigation }) {
       }
 
       if (success) {
-        showMessage(data.id ? 'Quotation updated!' : 'Quotation saved!');
+        // ======================================================
+        // QUOTATION DRAFT → FINAL CLEANUP
+        // NEW:
+        // Only after final save/update succeeds, remove the source
+        // draft so it no longer remains in Draft Quotations.
+        // Normal new quotation and History edit flows are untouched.
+        // ======================================================
+        if (sourceDraftId) {
+          await deleteDraftQuotation(sourceDraftId);
+        }
+
+        showMessage(
+          cleanQuotationData.id ? 'Quotation updated!' : 'Quotation saved!'
+        );
         navigation.navigate('History');
       } else {
         showMessage('Something went wrong!');

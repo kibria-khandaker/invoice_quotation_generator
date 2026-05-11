@@ -32,6 +32,7 @@ import {
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -49,7 +50,7 @@ import { generateInvoiceNumber } from '../utils/generateInvoiceNumber';
 // CreateInvoiceScreen saves incomplete work as Draft.
 // Final invoice save remains in InvoicePreviewScreen.
 // ======================================================
-import { saveInvoiceDraft } from '../services/storageService';
+import { saveInvoice, saveInvoiceDraft } from '../services/storageService';
 
 import {
   getCompanyProfiles,
@@ -618,6 +619,7 @@ function ActionButton({ title, icon, onPress, outline }) {
 }
 
 export default function CreateInvoiceScreen({ navigation, route }) {
+  const isScreenFocused = useIsFocused();
   const [invoiceForm, setInvoiceForm] = useState(createEmptyInvoiceForm);
   const [invoiceItems, setInvoiceItems] = useState([createEmptyInvoiceItem()]);
   const [itemModalVisible, setItemModalVisible] = useState(false);
@@ -676,7 +678,7 @@ const isContinueDraftMode = Boolean(route?.params?.isDraft && editData);
 // NEW:
 // Used when opening a saved/final invoice from History.
 // This only changes UI labels/messages.
-// Storage movement still uses saveInvoiceDraft() / saveInvoice().
+// Storage update uses saveInvoice(), draft action uses saveInvoiceDraft().
 // ======================================================
 const isSavedInvoiceEditMode = Boolean(route?.params?.isSaved && editData);
 
@@ -694,30 +696,28 @@ const screenSubtitle = isContinueDraftMode
 
 const draftActionLabel = isContinueDraftMode
   ? 'Update Draft'
-  : isSavedInvoiceEditMode
-  ? 'Move to Draft'
   : 'Save as Draft';
 
-const draftAlertTitle = isSavedInvoiceEditMode
-  ? 'Move to Draft'
-  : 'Save as Draft';
+const finalActionLabel = isSavedInvoiceEditMode
+  ? 'Update Invoice'
+  : draftActionLabel;
+
+const draftAlertTitle = 'Save as Draft';
 
 const draftAlertMessage = isContinueDraftMode
   ? 'Do you want to update this draft invoice?'
   : isSavedInvoiceEditMode
-  ? 'Do you want to move this saved invoice to draft? It will be removed from Invoice History and appear in Invoice Drafts.'
+  ? 'Do you want to save this edited invoice as a draft? It will move from Invoice History to Invoice Drafts.'
   : 'Do you want to save this invoice as draft?';
 
 const draftAlertConfirmText = isContinueDraftMode
   ? 'Update Draft'
-  : isSavedInvoiceEditMode
-  ? 'Move to Draft'
   : 'Save Draft';
 
 const draftSuccessMessage = isContinueDraftMode
   ? 'Invoice draft updated successfully.'
   : isSavedInvoiceEditMode
-  ? 'Invoice moved to draft successfully.'
+  ? 'Invoice saved as draft successfully.'
   : 'Invoice draft saved successfully.';
 
   // ======================================================
@@ -1177,6 +1177,86 @@ const draftSuccessMessage = isContinueDraftMode
     };
   };
 
+  // ======================================================
+  // INVOICE SIDE EDIT MODE DISPLAY LABEL
+  // NEW:
+  // Used only for the orange Edit Invoice notice card.
+  // Existing invoice save/draft/storage logic is not changed here.
+  // ======================================================
+  const getEditingInvoiceLabel = () => {
+    const invoiceNumber = invoiceForm.invoiceNumber || editData?.invoiceNumber;
+    const clientName = invoiceForm.clientName || editData?.clientName;
+
+    if (invoiceNumber) {
+      return `Invoice #${invoiceNumber}`;
+    }
+
+    if (clientName) {
+      return clientName;
+    }
+
+    return 'Saved Invoice';
+  };
+
+  const handleCancelInvoiceEdit = () => {
+    allowNavigationRef.current = true;
+    navigation.navigate('InvoiceHistory');
+
+    setTimeout(() => {
+      allowNavigationRef.current = false;
+    }, 700);
+  };
+
+
+  // ======================================================
+  // INVOICE SIDE DIRECT DRAFT SAVE HELPER
+  // FIX:
+  // Used by validation alert, manual Save as Draft / Move to Draft,
+  // unsaved leave protection, and auto draft.
+  // This prevents double confirmation alerts and keeps one draft
+  // save path for all invoice draft actions.
+  // ======================================================
+  const saveInvoiceDraftDirect = async ({
+    showSuccessAlert = false,
+    navigateToDraft = false,
+  } = {}) => {
+    const success = await saveInvoiceDraft(buildInvoiceData());
+
+    if (success) {
+      initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+        invoiceForm,
+        invoiceItems
+      );
+
+      if (showSuccessAlert) {
+        Alert.alert('Saved', draftSuccessMessage, [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (navigateToDraft) {
+                allowNavigationRef.current = true;
+                navigation.navigate('InvoiceDraft');
+
+                setTimeout(() => {
+                  allowNavigationRef.current = false;
+                }, 700);
+              }
+            },
+          },
+        ]);
+      } else if (navigateToDraft) {
+        allowNavigationRef.current = true;
+        navigation.navigate('InvoiceDraft');
+
+        setTimeout(() => {
+          allowNavigationRef.current = false;
+        }, 700);
+      }
+    }
+
+    return success;
+  };
+
 // ======================================================
 // INVOICE SIDE PREVIEW ACTION
 // EDIT:
@@ -1205,7 +1285,16 @@ ${formatValidationIssues(
         },
         {
           text: draftActionLabel,
-          onPress: handleSaveDraftInvoice,
+          onPress: async () => {
+            const success = await saveInvoiceDraftDirect({
+              showSuccessAlert: true,
+              navigateToDraft: true,
+            });
+
+            if (!success) {
+              Alert.alert('Error', 'Invoice draft could not be saved.');
+            }
+          },
         },
       ]
     );
@@ -1218,12 +1307,106 @@ ${formatValidationIssues(
   });
 };
 
+// ======================================================
+// INVOICE SIDE SAVED EDIT FINAL UPDATE
+// NEW:
+// Used only when Invoice History -> Edit opens this screen.
+// Complete invoice updates the existing History record.
+// Incomplete invoice offers direct Save as Draft without a second alert.
+// ======================================================
+const handleUpdateInvoice = () => {
+  const validationIssues = buildInvoiceValidationIssues({
+    invoiceForm,
+    invoiceItems,
+    totalAmount,
+  });
+
+  if (validationIssues.length > 0) {
+    Alert.alert(
+      'Incomplete Invoice',
+      `Please fix these before updating the invoice:
+
+${formatValidationIssues(
+        validationIssues
+      )}`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Save as Draft',
+          onPress: async () => {
+            const success = await saveInvoiceDraftDirect({
+              showSuccessAlert: true,
+              navigateToDraft: true,
+            });
+
+            if (!success) {
+              Alert.alert('Error', 'Invoice draft could not be saved.');
+            }
+          },
+        },
+      ]
+    );
+
+    return;
+  }
+
+  Alert.alert(
+    'Update Invoice',
+    'Are you sure you want to update this invoice?',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Update',
+        onPress: async () => {
+          const invoiceData = {
+            ...buildInvoiceData(),
+            invoiceLifecycle: 'saved',
+            saveType: 'saved',
+            invoiceSaveStatus: 'saved',
+          };
+
+          const success = await saveInvoice(invoiceData, 'saved');
+
+          if (success) {
+            initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
+              invoiceForm,
+              invoiceItems
+            );
+
+            Alert.alert('Success', 'Invoice updated successfully.', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  allowNavigationRef.current = true;
+                  navigation.navigate('InvoiceHistory');
+
+                  setTimeout(() => {
+                    allowNavigationRef.current = false;
+                  }, 700);
+                },
+              },
+            ]);
+          } else {
+            Alert.alert('Error', 'Invoice could not be updated.');
+          }
+        },
+      },
+    ]
+  );
+};
+
  // ======================================================
-// INVOICE SIDE SAVE AS DRAFT / MOVE TO DRAFT ACTION
+// INVOICE SIDE SAVE AS DRAFT ACTION
 // EDIT:
 // - New invoice: Save as Draft
 // - Draft edit: Update Draft
-// - Saved invoice edit: Move to Draft
+// - Saved invoice edit: not used by footer; validation can still save as draft
 //
 // Same ID is preserved by buildInvoiceData() and storageService,
 // so this does not create duplicate records.
@@ -1240,23 +1423,12 @@ const handleSaveDraftInvoice = () => {
       {
         text: draftAlertConfirmText,
         onPress: async () => {
-          const success = await saveInvoiceDraft(buildInvoiceData());
+          const success = await saveInvoiceDraftDirect({
+            showSuccessAlert: true,
+            navigateToDraft: true,
+          });
 
-          if (success) {
-            Alert.alert('Saved', draftSuccessMessage, [
-              {
-                text: 'OK',
-                onPress: () => {
-                  allowNavigationRef.current = true;
-                  initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
-                    invoiceForm,
-                    invoiceItems
-                  );
-                  navigation.navigate('InvoiceDraft');
-                },
-              },
-            ]);
-          } else {
+          if (!success) {
             Alert.alert('Error', 'Invoice draft could not be saved.');
           }
         },
@@ -1286,14 +1458,9 @@ const continueNavigationAfterConfirm = (action) => {
 };
 
 const saveDraftAndContinueNavigation = async (action) => {
-  const success = await saveInvoiceDraft(buildInvoiceData());
+  const success = await saveInvoiceDraftDirect();
 
   if (success) {
-    initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
-      invoiceForm,
-      invoiceItems
-    );
-
     continueNavigationAfterConfirm(action);
   } else {
     Alert.alert('Error', 'Invoice draft could not be saved.');
@@ -1352,21 +1519,14 @@ const autoSaveDraftBeforeBackground = async () => {
     return;
   }
 
-  if (isSavedInvoiceEditMode) {
+  if (isSavedInvoiceEditMode || !isScreenFocused) {
     return;
   }
 
   try {
     autoSaveInProgressRef.current = true;
 
-    const success = await saveInvoiceDraft(buildInvoiceData());
-
-    if (success) {
-      initialInvoiceSnapshotRef.current = createUnsavedInvoiceSnapshot(
-        invoiceForm,
-        invoiceItems
-      );
-    }
+    await saveInvoiceDraftDirect();
   } catch (error) {
     console.log('Invoice Auto Draft Save Error:', error);
   } finally {
@@ -1395,6 +1555,7 @@ useEffect(() => {
 }, [
   hasUnsavedInvoiceChanges,
   isSavedInvoiceEditMode,
+  isScreenFocused,
   invoiceForm,
   invoiceItems,
 ]);
@@ -1456,6 +1617,38 @@ useEffect(() => {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
+          {isSavedInvoiceEditMode ? (
+            <View style={styles.editModeTopCard}>
+              <View style={styles.editModeIconBox}>
+                <Ionicons name="create-outline" size={22} color="#f97316" />
+              </View>
+
+              <View style={styles.editModeContent}>
+                <Text style={styles.editModeTitle}>Edit Invoice Mode</Text>
+
+                <Text style={styles.editModeSubtitle}>
+                  You are editing a saved invoice. Review your changes before updating.
+                </Text>
+
+                <View style={styles.editModeBadge}>
+                  <Ionicons name="document-text-outline" size={13} color="#f97316" />
+                  <Text style={styles.editModeBadgeText}>
+                    Editing: {getEditingInvoiceLabel()}
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.cancelEditButton}
+                onPress={handleCancelInvoiceEdit}
+              >
+                <Ionicons name="close" size={15} color="#f97316" />
+                <Text style={styles.cancelEditButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+
           {/* ======================================================
               INVOICE SIDE SECTION 1: COMPANY INFORMATION
           ====================================================== */}
@@ -2092,10 +2285,10 @@ useEffect(() => {
             />
 
             <ActionButton
-              title={draftActionLabel}
-              icon="bookmark-outline"
-              outline
-              onPress={handleSaveDraftInvoice}
+              title={finalActionLabel}
+              icon={isSavedInvoiceEditMode ? 'checkmark-circle-outline' : 'bookmark-outline'}
+              outline={!isSavedInvoiceEditMode}
+              onPress={isSavedInvoiceEditMode ? handleUpdateInvoice : handleSaveDraftInvoice}
             />
           </View>
         </ScrollView>

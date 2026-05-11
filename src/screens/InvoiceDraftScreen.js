@@ -12,14 +12,14 @@
 //   uses Invoice-specific fields: INV / Total / Paid / Due.
 // ======================================================
 
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   Alert,
   FlatList,
-  StatusBar,
   Text as RNText,
   TextInput as RNTextInput,
+  StatusBar,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -29,9 +29,9 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 
 import styles from './InvoiceDraftScreenStyle';
 
@@ -135,6 +135,10 @@ const getDueAmount = (item) => {
   return item?.dueAmount ?? 0;
 };
 
+const getInvoiceDraftId = (item) => {
+  return safeText(item?.id).trim();
+};
+
 export default function InvoiceDraftScreen({ navigation }) {
   const insets = useSafeAreaInsets();
 
@@ -142,13 +146,27 @@ export default function InvoiceDraftScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
+  // ======================================================
+  // INVOICE DRAFT SELECT STATES
+  // NEW:
+  // Adds checkbox/select parity without changing Continue,
+  // Delete, Draft lifecycle, or storage logic.
+  // ======================================================
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedDraftIds, setSelectedDraftIds] = useState([]);
+
   const loadDrafts = async () => {
     try {
       setLoading(true);
 
       const draftInvoices = await getInvoiceDrafts();
+      const nextDrafts = Array.isArray(draftInvoices) ? draftInvoices : [];
+      const existingIds = new Set(nextDrafts.map(getInvoiceDraftId).filter(Boolean));
 
-      setDrafts(Array.isArray(draftInvoices) ? draftInvoices : []);
+      setDrafts(nextDrafts);
+      setSelectedDraftIds((prev) =>
+        prev.filter((draftId) => existingIds.has(draftId))
+      );
     } catch (error) {
       console.log('Load Invoice Drafts Error:', error);
       setDrafts([]);
@@ -189,6 +207,12 @@ export default function InvoiceDraftScreen({ navigation }) {
     });
   }, [drafts, search]);
 
+  const filteredDraftIds = filteredDrafts.map(getInvoiceDraftId).filter(Boolean);
+
+  const selectedDrafts = drafts.filter((item) =>
+    selectedDraftIds.includes(getInvoiceDraftId(item))
+  );
+
   const handleRefresh = async () => {
     setSearch('');
     await loadDrafts();
@@ -196,6 +220,78 @@ export default function InvoiceDraftScreen({ navigation }) {
 
   const handleClearSearch = () => {
     setSearch('');
+  };
+
+  const clearSelection = () => {
+    setSelectedDraftIds([]);
+    setIsSelectMode(false);
+  };
+
+  const handleToggleSelectMode = () => {
+    setIsSelectMode((prev) => {
+      const nextValue = !prev;
+
+      if (!nextValue) {
+        setSelectedDraftIds([]);
+      }
+
+      return nextValue;
+    });
+  };
+
+  const handleToggleDraftSelection = (draft) => {
+    const draftId = getInvoiceDraftId(draft);
+
+    if (!draftId) {
+      return;
+    }
+
+    setSelectedDraftIds((prev) => {
+      if (prev.includes(draftId)) {
+        return prev.filter((id) => id !== draftId);
+      }
+
+      return [...prev, draftId];
+    });
+  };
+
+  const handleSelectAllFilteredDrafts = () => {
+    if (filteredDraftIds.length === 0) {
+      Alert.alert('No Drafts', 'There are no visible invoice drafts to select.');
+      return;
+    }
+
+    setIsSelectMode(true);
+    setSelectedDraftIds(filteredDraftIds);
+  };
+
+  const handleDeleteSelectedDrafts = () => {
+    if (selectedDrafts.length === 0) {
+      Alert.alert('No Selection', 'Please select at least one invoice draft.');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Selected Drafts',
+      `Do you want to delete ${selectedDrafts.length} selected invoice draft(s)?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Selected',
+          style: 'destructive',
+          onPress: async () => {
+            const selectedIds = [...selectedDraftIds];
+
+            for (const draftId of selectedIds) {
+              await deleteInvoiceRecord(draftId);
+            }
+
+            clearSelection();
+            await loadDrafts();
+          },
+        },
+      ]
+    );
   };
 
   const handleContinueDraft = (draft) => {
@@ -221,6 +317,10 @@ export default function InvoiceDraftScreen({ navigation }) {
             const success = await deleteInvoiceRecord(draft.id);
 
             if (success) {
+              const draftId = getInvoiceDraftId(draft);
+              setSelectedDraftIds((prev) =>
+                prev.filter((selectedId) => selectedId !== draftId)
+              );
               await loadDrafts();
             } else {
               Alert.alert('Error', 'Draft could not be deleted.');
@@ -254,6 +354,7 @@ export default function InvoiceDraftScreen({ navigation }) {
             if (success) {
               setDrafts([]);
               setSearch('');
+              clearSelection();
             } else {
               Alert.alert('Error', 'Invoice drafts could not be cleared.');
             }
@@ -264,6 +365,8 @@ export default function InvoiceDraftScreen({ navigation }) {
   };
 
   const renderDraftItem = ({ item }) => {
+    const draftId = getInvoiceDraftId(item);
+    const isSelected = selectedDraftIds.includes(draftId);
     const clientName = getClientDisplayName(item);
     const clientCompany = getClientCompany(item);
     const invoiceNumber = getInvoiceNumber(item);
@@ -278,7 +381,11 @@ export default function InvoiceDraftScreen({ navigation }) {
       <TouchableOpacity
         activeOpacity={0.9}
         style={styles.draftCard}
-        onPress={() => handleContinueDraft(item)}
+        onPress={() =>
+          isSelectMode
+            ? handleToggleDraftSelection(item)
+            : handleContinueDraft(item)
+        }
       >
         <View style={styles.cardMainRow}>
           <View style={styles.cardLeftBlock}>
@@ -302,16 +409,49 @@ export default function InvoiceDraftScreen({ navigation }) {
               </View>
             </View>
 
+            <Text style={styles.leftInvoiceNumberText} numberOfLines={1}>
+              INV : {invoiceNumber}
+            </Text>
+
             <Text style={styles.amountMainText} numberOfLines={1}>
               Amount : ৳ {formatMoney(totalAmount)}
             </Text>
           </View>
 
           <View style={styles.cardRightBlock}>
-            <Text style={styles.rightInfoText} numberOfLines={1}>
-              <Text style={styles.rightInfoLabel}>INV : </Text>
-              {invoiceNumber}
-            </Text>
+            {/* ======================================================
+                INVOICE DRAFT CARD RIGHT ACTION
+                EDIT:
+                Normal mode shows Delete icon.
+                Select mode hides Delete and shows select circle.
+                Existing delete/select logic is reused.
+            ====================================================== */}
+            {isSelectMode ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.selectCircleButton}
+                onPress={() => handleToggleDraftSelection(item)}
+              >
+                <View
+                  style={[
+                    styles.selectCircle,
+                    isSelected && styles.selectCircleActive,
+                  ]}
+                >
+                  {isSelected ? (
+                    <Ionicons name="checkmark" size={15} color="#ffffff" />
+                  ) : null}
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.cardTopDeleteButton}
+                onPress={() => handleDeleteDraft(item)}
+              >
+                <Ionicons name="trash-outline" size={20} color="#b42318" />
+              </TouchableOpacity>
+            )}
 
             <Text style={styles.rightInfoText} numberOfLines={1}>
               <Text style={styles.rightInfoLabel}>Updated </Text>
@@ -323,6 +463,7 @@ export default function InvoiceDraftScreen({ navigation }) {
               {senderName}
             </Text>
           </View>
+          
         </View>
 
         {/* ======================================================
@@ -353,6 +494,12 @@ export default function InvoiceDraftScreen({ navigation }) {
           </View>
         </View>
 
+        {/* ======================================================
+            INVOICE DRAFT CARD ACTION
+            EDIT:
+            Bottom action keeps only Continue.
+            Delete is now shown on the card top-right in normal mode.
+        ====================================================== */}
         <View style={styles.cardActions}>
           <TouchableOpacity
             activeOpacity={0.88}
@@ -362,16 +509,8 @@ export default function InvoiceDraftScreen({ navigation }) {
             <Ionicons name="create-outline" size={17} color="#ffffff" />
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.88}
-            style={[styles.cardActionButton, styles.deleteButton]}
-            onPress={() => handleDeleteDraft(item)}
-          >
-            <Ionicons name="trash-outline" size={17} color="#b42318" />
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
         </View>
+
       </TouchableOpacity>
     );
   };
@@ -472,6 +611,29 @@ export default function InvoiceDraftScreen({ navigation }) {
 
             <TouchableOpacity
               activeOpacity={0.85}
+              style={[
+                styles.selectToggleButton,
+                isSelectMode && styles.selectToggleButtonActive,
+              ]}
+              onPress={handleToggleSelectMode}
+            >
+              <Ionicons
+                name={isSelectMode ? 'checkmark-circle-outline' : 'checkbox-outline'}
+                size={15}
+                color={isSelectMode ? '#ffffff' : BRAND_COLOR}
+              />
+              <Text
+                style={[
+                  styles.selectToggleText,
+                  isSelectMode && styles.selectToggleTextActive,
+                ]}
+              >
+                {isSelectMode ? 'Selecting' : 'Select'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
               style={styles.clearAllButton}
               onPress={handleClearAllDrafts}
             >
@@ -479,6 +641,40 @@ export default function InvoiceDraftScreen({ navigation }) {
               <Text style={styles.clearAllText}>Clear All</Text>
             </TouchableOpacity>
           </View>
+
+          {isSelectMode ? (
+            <View style={styles.selectionActionRow}>
+              <View style={styles.selectedCountPill}>
+                <Text style={styles.selectedCountText}>
+                  {selectedDraftIds.length} Selected
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.selectAllButton}
+                onPress={handleSelectAllFilteredDrafts}
+              >
+                <Text style={styles.selectAllText}>Select All</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.deleteSelectedButton}
+                onPress={handleDeleteSelectedDrafts}
+              >
+                <Text style={styles.deleteSelectedText}>Delete Selected</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.clearSelectionButton}
+                onPress={clearSelection}
+              >
+                <Text style={styles.clearSelectionText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
 
         <FlatList
