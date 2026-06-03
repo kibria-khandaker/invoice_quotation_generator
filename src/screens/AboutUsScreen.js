@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 const BRAND_COLOR = '#fd4475';
 
 const APP_VERSION = Constants.expoConfig?.version || '1.0.0';
-const BUILD_VERSION = Constants.expoConfig?.android?.versionCode || '1';
 
 export default function AboutUsScreen({ navigation }) {
   return (
@@ -60,19 +59,26 @@ export default function AboutUsScreen({ navigation }) {
             <Ionicons name="document-text-outline" size={34} color={BRAND_COLOR} />
           </View>
 
-          <Text style={styles.appTitle}>Invoice & Quotation Generator</Text>
+          <Text style={styles.appTitle}>
+            Invoice & Quotation Generator
+          </Text>
 
           <Text style={styles.heroText}>
-            This application is designed to help users create, manage, preview,
-            export, and share professional quotations and invoices easily from a
-            mobile device.
+            A practical mobile app for creating, managing, exporting, and
+            sharing professional quotations and invoices directly from your phone.
+          </Text>
+
+          <Text style={styles.heroText}>
+            It is built for freelancers, small businesses, service providers,
+            agencies, shops, contractors, and professionals who need a simple
+            way to prepare business documents on mobile.
           </Text>
         </View>
 
         <Section
-          icon="bulb-outline"
-          title="Purpose of the App"
-          text="The main purpose of this app is to save time and reduce repeated typing when preparing quotations and invoices. Users can create business documents, reuse saved company/client/item/payment information, save incomplete work as drafts, and generate PDF files when the document is ready."
+          icon="sparkles-outline"
+          title="What the App Does"
+          text="Invoice & Quotation Generator helps users create structured quotations and invoices, manage unfinished work, save final records, and prepare documents for business use from one mobile workflow."
         />
 
         <Section
@@ -80,80 +86,117 @@ export default function AboutUsScreen({ navigation }) {
           title="Main Features"
           bullets={[
             'Create professional quotations and invoices.',
-            'Save incomplete quotations and invoices as drafts.',
-            'Continue editing drafts later.',
-            'Preview documents before final saving.',
-            'Generate and share PDF files.',
-            'Manage saved history of quotations and invoices.',
-            'Search, filter, select, export, import, and backup data.',
-            'Reuse saved company, client, item, payment, mobile payment, signature, and notes presets.',
+            'Save unfinished work as drafts and continue later.',
+            'Preview documents before finalizing them.',
+            'Store completed quotations and invoices in history.',
+            'Generate and share professional PDF files.',
+            'Package multiple selected PDFs into a ZIP file for sharing.',
+            'Export and import supported backup data using CSV files.',
+            'Reuse company, client, item, payment, note, and signature presets.',
           ]}
         />
 
         <Section
-          icon="business-outline"
-          title="Reusable Settings Data"
-          text="The Settings section allows users to save frequently used business data so that the same information can be loaded quickly while creating a quotation or invoice."
+          icon="people-outline"
+          title="Who This App Is For"
+          text="The app is designed for individuals and businesses that need a faster way to prepare quotation and invoice documents without relying on a desktop system."
           bullets={[
-            'Company Information',
-            'Client Profiles',
-            'Items Catalog',
-            'Payment Terms & Method',
-            'Mobile Payment Info',
-            'Signature',
-            'Notes',
+            'Freelancers',
+            'Small businesses',
+            'Agencies',
+            'Shops and service providers',
+            'Contractors',
+            'Independent professionals',
+          ]}
+        />
+
+        <Section
+          icon="time-outline"
+          title="Built for Faster Business Document Work"
+          text="The app helps reduce repeated typing by allowing users to save reusable information once and load it again while creating new quotations or invoices. This keeps document preparation faster, more consistent, and easier to manage."
+        />
+
+        <Section
+          icon="business-outline"
+          title="Reusable Presets"
+          text="Users can save frequently used business information in Settings and reuse it whenever needed."
+          bullets={[
+            'Company information',
+            'Client profiles',
+            'Items or service catalog',
+            'Payment terms and payment method details',
+            'Mobile payment information',
+            'Authorized signature presets',
+            'Reusable note templates',
           ]}
         />
 
         <Section
           icon="archive-outline"
-          title="Draft & History System"
+          title="Drafts and History"
           text="Drafts are used for incomplete or work-in-progress documents. History is used for final saved quotations and invoices. This separation helps users keep unfinished work and completed business records organized."
         />
 
         <Section
-          icon="cloud-download-outline"
-          title="Backup & Restore"
-          text="The app includes CSV export and import options for important reusable data and document records. This helps users keep a backup and restore data when needed."
+          icon="folder-open-outline"
+          title="PDF, ZIP, CSV, Export, and Import"
+          text="The app supports practical file workflows for real business use."
+          bullets={[
+            'Generate quotation PDFs.',
+            'Generate invoice PDFs.',
+            'Share individual PDFs directly.',
+            'Create and share ZIP files from multiple selected PDFs.',
+            'Export supported backup data as CSV.',
+            'Import supported CSV backups when needed.',
+          ]}
         />
 
         <Section
-          icon="document-attach-outline"
-          title="PDF Generation"
-          text="When a quotation or invoice is complete, the app can generate a PDF file. The PDF may include company information, client information, item details, pricing summary, payment details, logo, signature, notes, and status information where applicable."
-        />
-
-        <Section
-          icon="phone-portrait-outline"
-          title="Designed for Mobile Use"
-          text="The app is designed with a mobile-friendly interface, compact cards, quick actions, clear forms, draft protection, and simple navigation so users can work comfortably on a phone."
+          icon="image-outline"
+          title="Logo and Signature Support"
+          text="Users may choose company logo images and authorized signature images from their own device to use in quotation and invoice documents."
         />
 
         <Section
           icon="lock-closed-outline"
-          title="Data & Privacy"
-          text="The app is built to keep user-created business data inside the app’s local storage on the device. When users export, share, or import files, those actions are controlled by the user through the device sharing and file selection system."
+          title="Local-First and User-Controlled"
+          text="Quotations, invoices, drafts, presets, and history records are stored on the user’s own device. The app does not automatically upload business records to a developer-controlled server."
+          bullets={[
+            'Users control when to export files.',
+            'Users control when to import backups.',
+            'Users control when to generate or share documents.',
+            'Local data may be removed if the app is uninstalled or storage is cleared.',
+          ]}
         />
 
         <Section
           icon="alert-circle-outline"
-          title="Important Note"
-          text="Users should review all quotation and invoice information before sending or sharing any generated PDF. Business details, pricing, taxes, discounts, payment information, and client information should be checked carefully before final use."
+          title="Important Reminder"
+          text="Users should review all document information before final use or sharing. Company details, client details, prices, discounts, taxes, payment information, notes, and generated PDF content should be checked carefully."
         />
 
         <View style={styles.supportCard}>
-          <Text style={styles.supportTitle}>Support & Development</Text>
+          <Text style={styles.supportTitle}>Developer & App Information</Text>
+
           <Text style={styles.supportText}>
-            This app is created to support small businesses, freelancers,
-            service providers, and professionals who need a simple way to manage
-            quotations and invoices.
+            Developed by Netkib for users who want a simple and mobile-friendly
+            way to create and manage quotation and invoice documents.
           </Text>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="globe-outline" size={16} color={BRAND_COLOR} />
+            <Text style={styles.infoText}>Website: https://netkib.com</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons name="mail-outline" size={16} color={BRAND_COLOR} />
+            <Text style={styles.infoText}>Email: netkib.apps@gmail.com</Text>
+          </View>
 
           <View style={styles.versionPill}>
             <Ionicons name="checkmark-circle-outline" size={15} color="#16a34a" />
             <Text style={styles.versionText}>
               Version: {APP_VERSION}
-              {/*  • Build {BUILD_VERSION} */}
             </Text>
           </View>
         </View>
@@ -387,6 +430,21 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#667085',
     fontWeight: '600',
+  },
+
+  infoRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  infoText: {
+    marginLeft: 8,
+    flex: 1,
+    fontSize: 12.8,
+    lineHeight: 19,
+    color: '#475467',
+    fontWeight: '700',
   },
 
   versionPill: {

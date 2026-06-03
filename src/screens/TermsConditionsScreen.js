@@ -59,9 +59,10 @@ export default function TermsConditionsScreen({ navigation }) {
           <Text style={styles.appTitle}>Terms of Use</Text>
 
           <Text style={styles.heroText}>
-            Please read these Terms and Conditions carefully before using this
-            application. By using the app, you agree to use it responsibly and
-            only for lawful business or personal document management purposes.
+            These Terms and Conditions explain the basic rules for using
+            Invoice & Quotation Generator. By using the app, you agree to use
+            it responsibly, lawfully, and with care when creating business
+            documents.
           </Text>
 
           <View style={styles.noticePill}>
@@ -74,93 +75,125 @@ export default function TermsConditionsScreen({ navigation }) {
           number="1"
           icon="checkmark-circle-outline"
           title="Acceptance of Terms"
-          text="By accessing or using this application, you agree to these Terms and Conditions. If you do not agree with these terms, you should stop using the application."
+          text="By accessing or using Invoice & Quotation Generator, you agree to these Terms and Conditions. If you do not agree with them, you should stop using the app."
         />
 
         <Section
           number="2"
           icon="phone-portrait-outline"
-          title="Use of the Application"
-          text="This app is provided to help users create, manage, save, preview, export, and share quotations and invoices. You agree to use the app only for lawful purposes and in a way that does not violate any applicable rules, business obligations, or rights of others."
+          title="Purpose of the App"
+          text="The app is designed to help users create, manage, preview, save, export, import, and share quotations and invoices from their own device. It is a document creation and management tool for personal, freelance, and business use."
         />
 
         <Section
           number="3"
           icon="person-outline"
           title="User Responsibility"
-          text="You are fully responsible for all information entered into the app, including company details, client information, item descriptions, prices, taxes, discounts, payment details, notes, signatures, logos, and any generated PDF documents."
+          text="You are responsible for the information you enter, save, export, import, or share through the app. This includes all business, client, pricing, tax, payment, branding, and signature-related content."
           bullets={[
-            'Review all information before saving, exporting, or sharing.',
-            'Make sure pricing, tax, discount, and payment details are correct.',
-            'Do not use false, misleading, illegal, or unauthorized information.',
-            'Keep your device and app data safe from unauthorized access.',
+            'Review each quotation or invoice before saving, exporting, or sharing.',
+            'Check company, client, pricing, discount, tax, and payment information carefully.',
+            'Use only information, logos, signatures, and content you are authorized to use.',
+            'Protect your device and any exported files from unauthorized access.',
           ]}
         />
 
         <Section
           number="4"
-          icon="document-attach-outline"
-          title="Invoices, Quotations & PDF Files"
-          text="The app can generate invoices and quotations based on the information provided by the user. Generated documents are only as accurate as the data entered by the user. The app does not verify business, legal, tax, or financial accuracy."
+          icon="document-text-outline"
+          title="Quotations, Invoices, and Generated Documents"
+          text="The app generates quotations, invoices, and related document files based on information provided by the user. The correctness, completeness, and suitability of each document depend on the data entered by the user."
+          bullets={[
+            'Generated documents should be reviewed before business use.',
+            'The app does not independently verify document accuracy.',
+            'The app does not confirm legal, tax, accounting, or payment compliance.',
+          ]}
         />
 
         <Section
           number="5"
           icon="archive-outline"
-          title="Drafts, History & Saved Data"
-          text="The app allows users to save documents as drafts and final records. Drafts are intended for incomplete or work-in-progress documents, while history records are intended for completed invoices and quotations. Users are responsible for managing, deleting, exporting, and backing up their own data."
+          title="Drafts, History, and Local Records"
+          text="The app may store drafts, saved quotation history, saved invoice history, reusable presets, and related records locally on the user’s device to support its features."
+          bullets={[
+            'Drafts are intended for unfinished or work-in-progress documents.',
+            'History records are intended for saved quotations and invoices.',
+            'Users are responsible for reviewing, managing, deleting, or backing up their own records.',
+            'Locally stored data may be removed if the app is uninstalled or app storage is cleared.',
+          ]}
         />
 
         <Section
           number="6"
-          icon="cloud-download-outline"
-          title="Backup, Export & Import"
-          text="The app may provide CSV backup, export, and import options. You are responsible for checking imported data and keeping backup files safe. Importing incorrect or duplicate data may affect saved records, depending on the selected import option."
+          icon="folder-open-outline"
+          title="PDF, ZIP, CSV, Export, Import, and Sharing"
+          text="The app may allow users to create quotation PDFs, invoice PDFs, package multiple selected PDFs into a ZIP file, export supported data as CSV, import supported CSV backups, and share files using device-supported sharing tools."
           bullets={[
-            'Keep backup files in a safe place.',
-            'Review imported data after restoring.',
-            'Use Replace, Skip, or Keep Both options carefully when conflicts appear.',
+            'These actions occur only when initiated by the user.',
+            'Users should check every PDF, ZIP, or CSV file before sharing or storing it.',
+            'Imported data should be reviewed after restore.',
+            'Conflict options such as Skip, Replace, or Keep Both should be used carefully where available.',
           ]}
         />
 
         <Section
           number="7"
-          icon="image-outline"
-          title="Logo, Signature & Uploaded Content"
-          text="You may upload logos and signatures for use in invoices and quotations. You must only upload content that you own or have permission to use. The app is not responsible for unauthorized use of images, signatures, or branding."
+          icon="share-social-outline"
+          title="Sharing and Third-Party Apps"
+          text="When you share PDF, ZIP, CSV, or other files from the app, the sharing process is handled by your device and the app or service you choose. You are responsible for selecting the correct recipient, storage location, or third-party service."
+          bullets={[
+            'The developer does not control how third-party apps handle shared files.',
+            'Files sent outside the app may remain in the destination chosen by the user.',
+            'Review files carefully before sending them through messaging, email, cloud storage, or other services.',
+          ]}
         />
 
         <Section
           number="8"
-          icon="calculator-outline"
-          title="Calculation Accuracy"
-          text="The app may calculate subtotals, discounts, taxes, and totals based on user input. You should always verify all calculations before sending or using a document. The app is not a substitute for accounting, tax, legal, or financial advice."
+          icon="image-outline"
+          title="Logos, Signatures, and Uploaded Images"
+          text="Users may select company logo images and authorized signature images from their own device for use in quotations, invoices, and saved presets."
+          bullets={[
+            'Only upload or use images you own or are authorized to use.',
+            'Do not misuse another person’s signature, company logo, or branding.',
+            'You remain responsible for the lawful use of any uploaded image content.',
+          ]}
         />
 
         <Section
           number="9"
-          icon="lock-closed-outline"
-          title="Data Storage"
-          text="The app is designed to store user-created data locally on the device unless the user chooses to export, import, share, or back up files. Data may be lost if the app is deleted, device storage is cleared, or the device is damaged without backup."
+          icon="calculator-outline"
+          title="Calculations and Financial Review"
+          text="The app may calculate subtotals, discounts, tax amounts, grand totals, paid amounts, due amounts, or other values based on user input. You should verify all amounts before relying on or sharing a document."
+          bullets={[
+            'Check calculations before issuing a quotation or invoice.',
+            'Confirm tax, pricing, and payment details for your own situation.',
+            'The app is not a substitute for professional accounting, tax, legal, or financial advice.',
+          ]}
         />
 
         <Section
           number="10"
-          icon="share-social-outline"
-          title="Sharing Documents"
-          text="When you share a PDF, CSV, or backup file, the sharing process is handled by your device and selected apps. You are responsible for choosing the correct recipient and checking the file before sharing."
+          icon="lock-closed-outline"
+          title="Local Data and Backup Responsibility"
+          text="The app is designed around local device storage. User-created data is not automatically backed up to the developer’s server. Users should create their own exports or backups when needed."
+          bullets={[
+            'Uninstalling the app or clearing storage may remove local app data.',
+            'Exported files should be stored safely if the user wants long-term copies.',
+            'The developer is not responsible for data loss caused by device issues, accidental deletion, or failure to maintain backups.',
+          ]}
         />
 
         <Section
           number="11"
           icon="ban-outline"
           title="Prohibited Use"
-          text="You agree not to use this application for illegal, fraudulent, harmful, misleading, or unauthorized activities."
+          text="You agree not to use the app for illegal, fraudulent, deceptive, abusive, or unauthorized activities."
           bullets={[
-            'Do not create fake or fraudulent invoices or quotations.',
-            'Do not misuse another person’s company, client, signature, or payment details.',
-            'Do not use the app to mislead customers, clients, or authorities.',
-            'Do not attempt to damage, modify, reverse engineer, or misuse the application.',
+            'Do not create fake, misleading, or fraudulent invoices or quotations.',
+            'Do not misuse another person’s business details, payment details, signature, or logo.',
+            'Do not use the app to misrepresent transactions or deceive clients, customers, or authorities.',
+            'Do not attempt to damage, interfere with, reverse engineer, or misuse the app.',
           ]}
         />
 
@@ -168,28 +201,39 @@ export default function TermsConditionsScreen({ navigation }) {
           number="12"
           icon="alert-circle-outline"
           title="No Professional Advice"
-          text="This application is a document creation and management tool. It does not provide legal, tax, accounting, financial, or business advice. For professional requirements, you should consult a qualified expert."
+          text="Invoice & Quotation Generator is a document creation tool. It does not provide legal advice, tax advice, accounting advice, financial advice, or business compliance advice. Users should consult qualified professionals where appropriate."
         />
 
         <Section
           number="13"
           icon="construct-outline"
-          title="Changes, Updates & Availability"
-          text="The app may be updated, changed, improved, or modified over time. Some features may be added, removed, or changed to improve stability, security, user experience, or business functionality."
+          title="Changes, Updates, and Availability"
+          text="The app may be updated, changed, improved, or modified over time. Features, layouts, supported file flows, and available options may be adjusted to improve stability, usability, compatibility, or security."
         />
 
         <Section
           number="14"
           icon="warning-outline"
           title="Limitation of Responsibility"
-          text="The app developer or provider is not responsible for losses, mistakes, incorrect documents, missing data, business disputes, tax issues, payment issues, or damages caused by user-entered information, incorrect use, device problems, or failure to keep backups."
+          text="To the extent permitted by applicable law, the developer is not responsible for losses, disputes, incorrect documents, user-entered mistakes, tax or payment issues, data loss, or damages resulting from how the app is used, how files are shared, or how users manage their own records and backups."
         />
 
         <Section
           number="15"
           icon="refresh-outline"
           title="Changes to These Terms"
-          text="These Terms and Conditions may be updated from time to time. Continued use of the app after updates means you accept the revised terms."
+          text="These Terms and Conditions may be revised from time to time to reflect app updates, policy changes, or operational improvements. Continued use of the app after an update means you accept the revised Terms."
+        />
+
+        <Section
+          number="16"
+          icon="mail-outline"
+          title="Contact"
+          text="For questions related to these Terms and Conditions, users may contact the developer at:"
+          bullets={[
+            'Email: netkib.apps@gmail.com',
+            'Website: https://netkib.com',
+          ]}
         />
 
         <View style={styles.importantCard}>
@@ -199,9 +243,10 @@ export default function TermsConditionsScreen({ navigation }) {
           </View>
 
           <Text style={styles.importantText}>
-            Always check every invoice or quotation before saving, exporting,
-            printing, or sharing. Your business documents should be reviewed
-            carefully to avoid mistakes.
+            Always review quotations, invoices, totals, payment details,
+            exports, and shared files before using them for business purposes.
+            The app helps create documents, but final responsibility remains
+            with the user.
           </Text>
         </View>
 

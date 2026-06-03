@@ -140,7 +140,7 @@ export default function AppNavigator() {
         />
 
         <Stack.Screen
-          name="AboutUs"
+          name="About"
           component={AboutUsScreen}
           options={{ headerShown: false }}
         />

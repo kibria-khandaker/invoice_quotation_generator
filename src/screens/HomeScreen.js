@@ -53,9 +53,9 @@ const MAIN_MENU_ITEMS = [
 
 const QUICK_LINKS = [
   {
-    id: 'about-us',
-    title: 'About Us',
-    route: 'AboutUs',
+    id: 'about',
+    title: 'About',
+    route: 'About',
     icon: 'person-outline',
   },
   {

@@ -56,136 +56,206 @@ export default function PrivacyPolicyScreen({ navigation }) {
             <Ionicons name="shield-checkmark-outline" size={34} color={BRAND_COLOR} />
           </View>
 
-          <Text style={styles.appTitle}>Your Data & Privacy</Text>
+          <Text style={styles.appTitle}>
+            Invoice & Quotation Generator
+          </Text>
 
           <Text style={styles.heroText}>
-            This Privacy Policy explains how this application handles the
-            information you create, save, import, export, and share while using
-            the app.
+            Invoice & Quotation Generator is designed to help users create,
+            manage, export, and share quotations and invoices directly from
+            their own device.
+          </Text>
+
+          <Text style={styles.heroText}>
+            This Privacy Policy explains how the App handles information, what
+            data may be stored locally, and how user-controlled export and
+            sharing features work.
           </Text>
 
           <View style={styles.noticePill}>
             <Ionicons name="information-circle-outline" size={15} color={BRAND_COLOR} />
-            <Text style={styles.noticePillText}>Last updated: May 2026</Text>
+            <Text style={styles.noticePillText}>
+              Effective Date: May 13, 2026
+            </Text>
           </View>
         </View>
 
         <Section
           number="1"
-          icon="document-text-outline"
-          title="Information You Enter"
-          text="The app allows you to enter business and document-related information for creating invoices and quotations. This may include company details, client profiles, item details, payment information, mobile payment details, notes, logos, and signatures."
+          icon="briefcase-outline"
+          title="Developer Information"
+          text="App Name: Invoice & Quotation Generator"
+          bullets={[
+            'Developer Website: https://netkib.com',
+            'Privacy Contact Email: netkib.apps@gmail.com',
+            'For privacy-related questions, users may contact us at the email address above.',
+          ]}
         />
 
         <Section
           number="2"
-          icon="save-outline"
-          title="Local Data Storage"
-          text="The app is designed to store user-created data locally on your device. Saved invoices, quotations, drafts, settings presets, and backup-related data are stored inside the app’s local storage unless you choose to export, share, or import files."
+          icon="ban-outline"
+          title="Information We Do Not Collect"
+          text="Invoice & Quotation Generator does not require account registration, login, or sign-in. We do not collect, upload, sell, rent, or transmit users’ quotation, invoice, draft, client, company, signature, or document data to our servers."
+          bullets={[
+            'No advertising trackers',
+            'No user profiling for ads',
+            'No cloud synchronization of user documents',
+            'No remote storage of quotations, invoices, or business records',
+          ]}
         />
 
         <Section
           number="3"
-          icon="cloud-offline-outline"
-          title="No Automatic Cloud Upload"
-          text="The app does not automatically upload your invoices, quotations, drafts, client profiles, company profiles, signatures, logos, or payment information to a cloud server from this screen or by default. Your data stays on your device unless you manually share or export it."
+          icon="create-outline"
+          title="Information Users May Enter in the App"
+          text="To use the App’s features, users may choose to enter or save information such as:"
+          bullets={[
+            'Company name, address, email, and phone number',
+            'Client or customer details',
+            'Quotation and invoice numbers',
+            'Item or service descriptions',
+            'Prices, discounts, tax values, and totals',
+            'Payment terms and payment method notes',
+            'Mobile payment information entered by the user',
+            'Notes and document footer text',
+            'Company logo image',
+            'Authorized signature image',
+          ]}
+          extraText="This information is provided voluntarily by the user for document creation and management."
         />
 
         <Section
           number="4"
-          icon="folder-open-outline"
-          title="Drafts and History"
-          text="Drafts are used for incomplete documents, and History is used for final saved invoices and quotations. These records are kept in local app storage so you can continue editing, view past documents, generate PDFs, or manage saved records."
+          icon="save-outline"
+          title="Local Device Storage"
+          text="The App stores user-created content locally on the user’s own device so that features such as drafts, history, presets, and saved records can work properly."
+          bullets={[
+            'Saved quotations',
+            'Saved invoices',
+            'Draft quotations',
+            'Draft invoices',
+            'Company profiles',
+            'Client profiles',
+            'Item or service presets',
+            'Payment-related presets',
+            'Notes and signature presets',
+            'Local document history',
+          ]}
+          extraText="This data remains on the user’s device unless the user chooses to export, share, delete, clear app data, or uninstall the App."
         />
 
         <Section
           number="5"
-          icon="cloud-download-outline"
-          title="Export, Backup and Import"
-          text="The app may allow you to export and import CSV backup files or PDF documents. When you export data, the generated file may contain the information you entered in the app. You are responsible for storing and sharing these files safely."
+          icon="image-outline"
+          title="Images Selected by the User"
+          text="The App allows users to select images from their device for limited document-related purposes, such as company logos and authorized signature images."
           bullets={[
-            'Only share backup or PDF files with trusted people or services.',
-            'Check exported files before sending them to anyone.',
-            'Imported files may restore or add data inside the app.',
-            'Keep backup files secure because they may contain business or client information.',
+            'Images are selected only when the user chooses to upload them inside the App.',
+            'The App does not upload these images to our servers.',
           ]}
         />
 
         <Section
           number="6"
-          icon="share-social-outline"
-          title="Sharing Files"
-          text="When you share a PDF, CSV, or backup file, the sharing process is handled by your device and the apps you choose, such as email, messaging, cloud storage, or file manager apps. You should confirm the correct recipient and destination before sharing."
+          icon="folder-open-outline"
+          title="PDF, ZIP, CSV, Export, Import, and Sharing Features"
+          text="The App includes user-controlled file features, including:"
+          bullets={[
+            'Generating quotation PDFs',
+            'Generating invoice PDFs',
+            'Sharing generated PDF files',
+            'Packaging multiple selected PDFs into a ZIP file for sharing',
+            'Exporting supported data as CSV backup files',
+            'Importing supported CSV backup files back into the App',
+          ]}
+          extraText="These actions happen only when initiated by the user. When a user chooses to share a PDF, ZIP, or CSV file through another app, platform, cloud service, messaging app, or email client, that transfer is controlled by the user and may be subject to the privacy practices of the selected third-party service. The App does not automatically send exported or shared files to the developer."
         />
 
         <Section
           number="7"
-          icon="image-outline"
-          title="Logo and Signature Images"
-          text="If you upload a company logo or signature image, the app may store that image or its encoded data locally so it can be reused in invoices, quotations, previews, and PDF files. You should only upload images you own or have permission to use."
+          icon="share-social-outline"
+          title="Data Sharing"
+          text="We do not sell or share user-entered quotation, invoice, client, company, draft, history, logo, or signature data with third parties."
+          bullets={[
+            'Content may leave the device only when the user chooses to share a generated document.',
+            'Content may leave the device only when the user chooses to export a backup file.',
+            'Content may leave the device only when the user saves a file using device or third-party tools.',
+            'Content may leave the device only when the user imports a file from a location selected by the user.',
+          ]}
+          extraText="These are user-directed actions."
         />
 
         <Section
           number="8"
-          icon="person-outline"
-          title="Client and Company Information"
-          text="Client profiles and company profiles are saved to help you reuse information and reduce repeated typing. These records may include names, addresses, phone numbers, email addresses, and company information entered by you."
+          icon="trash-outline"
+          title="Data Retention and Deletion"
+          text="Because the App stores working data locally on the user’s device:"
+          bullets={[
+            'Data remains available until the user deletes it, clears app storage, or uninstalls the App.',
+            'Uninstalling the App may remove locally stored in-app data from the device.',
+            'Exported files, shared files, or backup files saved outside the App may remain wherever the user chose to store or send them.',
+            'The developer does not maintain server-side copies of user-generated quotations, invoices, drafts, or backups.',
+          ]}
+          extraText="Users are responsible for keeping backup copies of any exported files they wish to retain."
         />
 
         <Section
           number="9"
-          icon="card-outline"
-          title="Payment Information"
-          text="Payment terms, payment methods, mobile payment information, bank details, or similar information may be saved if you enter them into the app. You should avoid saving sensitive information that you do not want stored on your device."
+          icon="shield-outline"
+          title="Data Security"
+          text="The App is designed around a local-first workflow. User-created business records are stored on the user’s device rather than being uploaded to a developer-controlled server."
+          extraText="Users should also take reasonable steps to protect their own device, exported files, and any files they share through external apps or services."
         />
 
         <Section
           number="10"
-          icon="trash-outline"
-          title="Deleting Data"
-          text="You can delete saved records, drafts, presets, and other app data using the available delete or clear options inside the app. If the app is uninstalled or device storage is cleared, local app data may be removed permanently."
+          icon="phone-portrait-outline"
+          title="Permissions and Device Access"
+          text="The App may request or use device capabilities only as needed for its features, such as:"
+          bullets={[
+            'Selecting user-chosen logo or signature images',
+            'Creating, exporting, importing, or sharing user-initiated files',
+          ]}
+          extraText="The App does not use microphone recording for its core features. Any permission request, where applicable, is used only to support the related user-facing function."
         />
 
         <Section
           number="11"
-          icon="phone-portrait-outline"
-          title="Device and App Permissions"
-          text="The app may request access to device features such as files, media library, or sharing tools so you can upload logos/signatures, import CSV files, export backups, or share generated PDFs. These permissions are used only for the actions you choose."
+          icon="people-outline"
+          title="Children’s Privacy"
+          text="Invoice & Quotation Generator is intended for general users, freelancers, small businesses, service providers, and professionals."
+          bullets={[
+            'The App is not specifically directed to children.',
+            'We do not knowingly collect personal information from children through the App.',
+          ]}
         />
 
         <Section
           number="12"
-          icon="analytics-outline"
-          title="Analytics and Tracking"
-          text="This policy page is written for the app’s current local-first behavior. If analytics, crash reporting, cloud sync, account login, or online services are added in the future, this Privacy Policy should be updated to clearly explain what data is collected and how it is used."
+          icon="apps-outline"
+          title="Third-Party Services"
+          text="The App may rely on standard operating system or device-level features for actions such as file selection, file sharing, and document handling."
+          extraText="If a user shares files using third-party apps or services, those services operate under their own privacy policies and terms."
         />
 
         <Section
           number="13"
-          icon="warning-outline"
-          title="Data Loss and Backups"
-          text="Because the app stores data locally, your data may be lost if your device is damaged, reset, storage is cleared, or the app is removed. You should export backups regularly if your invoices, quotations, clients, or business data are important."
+          icon="refresh-outline"
+          title="Changes to This Privacy Policy"
+          text="We may update this Privacy Policy from time to time to reflect changes in the App, legal requirements, or policy expectations."
+          extraText="When updates are made, the revised version will be posted on the official Privacy Policy page."
         />
 
         <Section
           number="14"
-          icon="people-outline"
-          title="Third-Party Apps"
-          text="If you choose to share files through third-party apps or save files to external services, those apps and services may handle your data according to their own privacy policies. This app cannot control how third-party apps manage shared files."
-        />
-
-        <Section
-          number="15"
-          icon="shield-outline"
-          title="User Responsibility"
-          text="You are responsible for protecting your device, exported files, client information, business information, payment details, signatures, and generated documents. Use a device lock, keep backups secure, and avoid sharing sensitive files with untrusted recipients."
-        />
-
-        <Section
-          number="16"
-          icon="refresh-outline"
-          title="Changes to This Privacy Policy"
-          text="This Privacy Policy may be updated from time to time to reflect app changes, new features, or improved privacy information. Continued use of the app after updates means you accept the revised policy."
+          icon="mail-outline"
+          title="Contact Us"
+          text="For questions about this Privacy Policy or privacy-related matters, contact:"
+          bullets={[
+            'Email: netkib.apps@gmail.com',
+            'Website: https://netkib.com',
+          ]}
         />
 
         <View style={styles.importantCard}>
@@ -195,21 +265,21 @@ export default function PrivacyPolicyScreen({ navigation }) {
           </View>
 
           <Text style={styles.importantText}>
-            Invoices, quotations, backups, logos, signatures, and client details
-            may contain sensitive business information. Review and protect your
-            data before exporting, importing, or sharing files.
+            Quotations, invoices, exported files, logos, signatures, and
+            business records may contain information you consider important.
+            Review and protect your device and shared files carefully.
           </Text>
         </View>
 
         <Text style={styles.footerText}>
-          By using this app, you acknowledge this Privacy Policy.
+          This page presents the App’s current Privacy Policy.
         </Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Section({ number, icon, title, text, bullets }) {
+function Section({ number, icon, title, text, bullets, extraText }) {
   return (
     <View style={styles.sectionCard}>
       <View style={styles.sectionHeader}>
@@ -236,6 +306,8 @@ function Section({ number, icon, title, text, bullets }) {
           ))}
         </View>
       ) : null}
+
+      {!!extraText && <Text style={styles.extraText}>{extraText}</Text>}
     </View>
   );
 }
@@ -424,6 +496,14 @@ const styles = StyleSheet.create({
   },
 
   sectionText: {
+    fontSize: 12.8,
+    lineHeight: 20,
+    color: '#667085',
+    fontWeight: '600',
+  },
+
+  extraText: {
+    marginTop: 9,
     fontSize: 12.8,
     lineHeight: 20,
     color: '#667085',

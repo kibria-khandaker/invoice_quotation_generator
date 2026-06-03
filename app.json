@@ -2,7 +2,7 @@
   "expo": {
     "name": "Invoice & Quotation Generator",
     "slug": "invoice-quotation-generator",
-    "version": "3.0.0",
+    "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,6 +23,15 @@
       "edgeToEdgeEnabled": true,
       "package": "com.qakibria.invoicequotationgenerator"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "microphonePermission": false
+        }
+      ],
+      "./plugins/withAdiRegistrationAsset"
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
